@@ -17,6 +17,11 @@ app.get('/', function (req, res) {
     res.render('index'); 
 });
 
+app.get('/packages', function (req, res) {
+    res.render('packages'); 
+});
+
+
 
 app.use(function (error, req, res, next) {
     // Default error handling function

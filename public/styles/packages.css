@@ -1,0 +1,156 @@
+:root {
+  --bg-gradient: linear-gradient(135deg, #203a33 0%, #2c4a41 100%);
+  --card-bg: #ffffff;
+  --text-dark: #1e2b28;
+  --accent-color: #00b894;
+  --light-text: #f9f9f9;
+  --muted: #94a3b8;
+}
+
+/* ------------------------------------------------------------ */
+/* HEADER */
+/* ------------------------------------------------------------ */
+.package-header {
+  background: var(--bg-gradient);
+  color: var(--light-text);
+  text-align: center;
+  padding: 6rem 1rem 5rem;
+  position: relative;
+}
+
+.package-header .navbar {
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+.header-content {
+  position: relative;
+  z-index: 2;
+}
+
+.page-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  margin-bottom: 0.7rem;
+}
+
+.page-subtitle {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 1.1rem;
+  color: var(--light-text);
+  opacity: 0.85;
+}
+
+/* ------------------------------------------------------------ */
+/* GRID */
+/* ------------------------------------------------------------ */
+.packages-grid-wrapper {
+  background: var(--bg-gradient);
+  padding: 80px 0 120px;
+}
+
+.packages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 40px;
+}
+
+/* ------------------------------------------------------------ */
+/* PACKAGE CARD */
+/* ------------------------------------------------------------ */
+.package-card {
+  background-color: var(--card-bg);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.package-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.package-image-container {
+  position: relative;
+  height: 200px;
+}
+
+.package-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.package-theme {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--accent-color);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 10px;
+}
+
+/* ------------------------------------------------------------ */
+/* CARD INFO */
+/* ------------------------------------------------------------ */
+.package-info {
+  padding: 22px 20px 25px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+}
+
+.package-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 0.6rem;
+}
+
+.package-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.package-price {
+  color: var(--accent-color);
+  font-weight: 700;
+}
+
+.book-btn {
+  align-self: flex-start;
+  background: var(--accent-color);
+  color: white;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.25s ease;
+}
+
+.book-btn:hover {
+  background: #019973;
+  color: white;
+}
+
+/* ------------------------------------------------------------ */
+/* RESPONSIVE */
+/* ------------------------------------------------------------ */
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 2.2rem;
+  }
+  .packages-grid {
+    gap: 25px;
+  }
+}
