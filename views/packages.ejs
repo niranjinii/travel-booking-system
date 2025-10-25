@@ -1,15 +1,11 @@
 <!DOCTYPE html>
-
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <title>Travel Packages | Destinations</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <link
@@ -24,7 +20,6 @@
     />
 
     <link rel="stylesheet" href="/styles/style.css" />
-
     <link rel="stylesheet" href="/styles/packages.css" />
   </head>
 
@@ -32,13 +27,10 @@
     <div class="page-wrapper">
       <header class="package-header package-header-bg">
         <div class="overlay"></div>
-        <!-- Added for image overlay -->
-
         <%- include('partials/navbar') %>
 
         <div class="header-content">
           <h1 class="page-title">EXPLORE OUR TRAVEL PACKAGES</h1>
-
           <p class="page-subtitle">
             Hand-picked destinations for your next great adventure
           </p>
@@ -46,32 +38,45 @@
       </header>
 
       <main class="packages-grid-wrapper">
-        <div class="packages-grid">
-          <% const packages = [ { title: 'The Maldivian Escape', price: '2,999',
-          days: '7 Days', image: '/images/carousel1.jpg', theme:
-          'Beaches' }, { title: 'Swiss Alps Grand Tour', price: '4,500', days:
-          '10 Days', image: '/images/placeholder-package-2.jpg', theme:
-          'Mountains' }, { title: 'Kyoto Cultural Journey', price: '3,200',
-          days: '9 Days', image: '/images/placeholder-package-3.jpg', theme:
-          'Culture' }, { title: 'Patagonia Wilderness Trek', price: '3,850',
-          days: '12 Days', image: '/images/placeholder-package-4.jpg', theme:
-          'Adventure' }, { title: 'Mediterranean Cruise', price: '2,100', days:
-          '5 Days', image: '/images/placeholder-package-5.jpg', theme: 'Cruises'
-          }, { title: 'Safari in Serengeti', price: '5,100', days: '8 Days',
-          image: '/images/placeholder-package-6.jpg', theme: 'Wildlife' } ]; %>
-          <% packages.forEach(pkg => { %>
+        <!-- Filter & Search Bar -->
+        <section class="package-filters container">
+          <div class="filter-bar">
+            <input
+              type="text"
+              class="form-control search-input"
+              placeholder="Search destinations..."
+            />
 
+            <select class="form-select filter-select">
+              <option selected disabled>Filter by Theme</option>
+              <option>Beaches</option>
+              <option>Mountains</option>
+              <option>Adventure</option>
+              <option>Culture</option>
+              <option>Wildlife</option>
+              <option>Cruises</option>
+            </select>
+
+            <button class="btn filter-btn">Search</button>
+          </div>
+        </section>
+
+        <!-- Packages Grid -->
+        <div class="packages-grid">
+          <% const packages = [
+            { title: 'The Maldivian Escape', price: '2,999', days: '7 Days', image: '/images/carousel1.jpg', theme: 'Beaches' },
+            { title: 'Swiss Alps Grand Tour', price: '4,500', days: '10 Days', image: '/images/placeholder-package-2.jpg', theme: 'Mountains' },
+            { title: 'Kyoto Cultural Journey', price: '3,200', days: '9 Days', image: '/images/placeholder-package-3.jpg', theme: 'Culture' },
+            { title: 'Patagonia Wilderness Trek', price: '3,850', days: '12 Days', image: '/images/placeholder-package-4.jpg', theme: 'Adventure' },
+            { title: 'Mediterranean Cruise', price: '2,100', days: '5 Days', image: '/images/placeholder-package-5.jpg', theme: 'Cruises' },
+            { title: 'Safari in Serengeti', price: '5,100', days: '8 Days', image: '/images/placeholder-package-6.jpg', theme: 'Wildlife' }
+          ]; %>
+
+          <% packages.forEach(pkg => { %>
           <div class="package-card shadow-sm">
             <div class="package-image-container">
-              <img
-                src="<%= pkg.image %>"
-                alt="<%= pkg.title %>"
-                class="package-image"
-              />
-
-              <span class="package-theme badge rounded-pill"
-                ><%= pkg.theme %></span
-              >
+              <img src="<%= pkg.image %>" alt="<%= pkg.title %>" class="package-image" />
+              <span class="package-theme badge rounded-pill"><%= pkg.theme %></span>
             </div>
 
             <div class="package-info">
@@ -79,14 +84,12 @@
 
               <div class="package-details">
                 <span class="package-days"><%= pkg.days %></span>
-
                 <span class="package-price">$<%= pkg.price %></span>
               </div>
 
               <a href="#" class="book-btn">Book Tour</a>
             </div>
           </div>
-
           <% }); %>
         </div>
       </main>
