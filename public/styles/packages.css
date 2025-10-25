@@ -1,8 +1,8 @@
 :root {
-  --bg-gradient: linear-gradient(135deg, #203a33 0%, #2c4a41 100%);
+  --bg-gradient: linear-gradient(135deg, #101f1b 0%, #2c4a41 100%);
   --card-bg: #ffffff;
   --text-dark: #1e2b28;
-  --accent-color: #00b894;
+  --accent-color: #444; /* dark gray accent */
   --light-text: #f9f9f9;
   --muted: #94a3b8;
 }
@@ -11,17 +11,37 @@
 /* HEADER */
 /* ------------------------------------------------------------ */
 .package-header {
-  background: var(--bg-gradient);
+  background: none;
+  background-image: url('/images/carousel1.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   color: var(--light-text);
   text-align: center;
   padding: 6rem 1rem 5rem;
   position: relative;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.package-header .overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1;
 }
 
 .package-header .navbar {
   position: absolute;
   top: 0;
   width: 100%;
+  z-index: 10;
 }
 
 .header-content {
@@ -33,6 +53,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 3rem;
   margin-bottom: 0.7rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
 }
 
 .page-subtitle {
@@ -40,6 +61,7 @@
   font-size: 1.1rem;
   color: var(--light-text);
   opacity: 0.85;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 /* ------------------------------------------------------------ */
@@ -52,8 +74,10 @@
 
 .packages-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  grid-template-columns: repeat(3, 1fr); /* exactly 3 per row */
   gap: 40px;
+  justify-content: center;
+  margin: 30px;
 }
 
 /* ------------------------------------------------------------ */
@@ -93,6 +117,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   padding: 6px 10px;
+  border-radius: 5px;
 }
 
 /* ------------------------------------------------------------ */
@@ -135,22 +160,23 @@
   padding: 8px 18px;
   border-radius: 8px;
   text-decoration: none;
-  transition: background 0.25s ease;
+  transition: all 0.25s ease;
 }
 
 .book-btn:hover {
-  background: #019973;
+  background: #222; /* darker hover */
   color: white;
 }
 
-/* ------------------------------------------------------------ */
 /* RESPONSIVE */
-/* ------------------------------------------------------------ */
-@media (max-width: 768px) {
-  .page-title {
-    font-size: 2.2rem;
-  }
+@media (max-width: 1024px) {
   .packages-grid {
-    gap: 25px;
+    grid-template-columns: repeat(2, 1fr); /* 2 per row on tablets */
+  }
+}
+
+@media (max-width: 640px) {
+  .packages-grid {
+    grid-template-columns: 1fr; /* 1 per row on mobile */
   }
 }
