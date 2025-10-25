@@ -14,12 +14,23 @@ app.use(express.urlencoded({ extended: true })); // Parse incoming request bodie
 app.use(express.static('public')); // Serve static files (e.g. CSS files)
 
 app.get('/', function (req, res) {
-    res.render('index'); 
+    res.render('index', {page: 'index'}); 
 });
 
 app.get('/packages', function (req, res) {
-    res.render('packages'); 
+    res.render('packages', {page: 'packages'}); 
 });
+
+app.get('/login', function (req, res) {
+    res.render('login', {page: 'login'}); 
+});
+
+app.get('/signup', function (req, res) {
+    res.render('register', {page: 'register'}); 
+});
+
+
+
 
 
 
