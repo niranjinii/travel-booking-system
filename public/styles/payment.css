@@ -1,0 +1,108 @@
+.payment-wrapper {
+  background-color: var(--dark-green);
+  color: white;
+  min-height: 100vh;
+  padding: 6rem 0;
+  font-family: "Montserrat", sans-serif;
+}
+
+.payment-heading {
+  text-align: center;
+  font-size: 3rem;
+  font-weight: 600;
+  margin-bottom: 3rem;
+  text-transform: uppercase;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.payment-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.payment-summary {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.payment-summary h2 {
+  font-weight: 600;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--accent-color, #00b894);
+  padding-bottom: 0.5rem;
+}
+
+.payment-summary p {
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.payment-form h2 {
+  font-weight: 600;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--accent-color, #00b894);
+  padding-bottom: 0.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+}
+
+.form-group input {
+  padding: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  color: #333;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.form-group.small input {
+  width: 100%;
+}
+
+.pay-btn {
+  background: #00b894;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.pay-btn:hover {
+  background: #019870;
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .payment-container {
+    grid-template-columns: 1fr;
+  }
+}

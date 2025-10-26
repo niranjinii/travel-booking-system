@@ -1,0 +1,59 @@
+.map-page-wrapper {
+    padding: 40px 20px;
+    text-align: center;
+    background-color: var(--dark-green);
+    min-height: 100vh;
+}
+
+.map-title {
+    font-family: var(--font-serif);
+    font-size: 2.5rem;
+    color: var(--light-text);
+    margin-bottom: 30px;
+}
+
+.map-container svg {
+    width: 100%;
+    max-width: 1200px;
+    height: auto;
+    margin: 0 auto 40px auto;
+}
+
+path[data-country] {
+    cursor: pointer;
+    fill: #ccc;
+    stroke: #fff;
+    transition: fill 0.3s ease;
+}
+
+path[data-country]:hover {
+    fill: #555;
+}
+
+.packages-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    width: 90%;
+    margin: 0 auto;
+}
+
+.package-card {
+    background-color: var(--light-text);
+    color: var(--dark-green);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+.package-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.package-card h3 {
+    font-family: var(--font-serif);
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
