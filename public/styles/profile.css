@@ -3,10 +3,8 @@
   color: white;
   min-height: 100vh;
   padding: 4rem 0;
-  font-family: 'Inter', sans-serif;
-}
-
-/* --- Profile Header --- */
+  font-family: "Inter", sans-serif;
+} /* --- Profile Header --- */
 .profile-header {
   display: flex;
   align-items: center;
@@ -17,30 +15,25 @@
   margin-bottom: 3rem;
   margin-top: 3rem;
 }
-
 .profile-info h1 {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 2.5rem;
   font-weight: 700;
   color: #fff;
 }
-
 .profile-info p {
   font-size: 1.1rem;
   opacity: 0.9;
 }
-
 .profile-avatar img {
   width: 100px;
   height: 100px;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid #fff;
-}
-
-/* --- Bookings Section --- */
+} /* --- Bookings Section --- */
 .bookings-section h2 {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 2rem;
   font-weight: 600;
   margin-bottom: 2rem;
@@ -48,13 +41,11 @@
   display: inline-block;
   padding-bottom: 0.5rem;
 }
-
 .bookings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 2rem;
 }
-
 .booking-card {
   background: rgba(255, 255, 255, 0.08);
   border-radius: 12px;
@@ -62,39 +53,33 @@
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
-
 .booking-card:hover {
   /*transform: translateY(-4px);*/
   box-shadow: 0 15px 25px rgba(0, 0, 0, 0.3);
 }
-
 .booking-image {
   height: 180px;
   background-size: cover;
   background-position: center;
 }
-
 .booking-details {
   padding: 1.5rem;
 }
-
 .booking-details h3 {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: 1rem;
   color: #fff;
 }
-
 .booking-details p {
   margin: 0.3rem 0;
   opacity: 0.9;
 }
-
 .details-btn {
   display: inline-block;
   margin-top: 1rem;
-  background: var(--accent-color, #00b894);
+  background: var(--accent-color, #264a43);
   color: white;
   text-decoration: none;
   padding: 0.6rem 1.2rem;
@@ -102,30 +87,24 @@
   font-weight: 600;
   transition: background 0.3s ease, transform 0.2s ease;
 }
-
 .details-btn:hover {
-  background: #019b75;
+  background: #3c4b47;
   transform: translateY(-2px);
 }
-
 .no-bookings {
   text-align: center;
   font-size: 1.2rem;
   opacity: 0.8;
-}
-
-/* --- Responsive --- */
+} /* --- Responsive --- */
 @media (max-width: 768px) {
   .profile-header {
     flex-direction: column;
     align-items: flex-start;
     text-align: center;
   }
-
   .profile-avatar {
     margin-top: 1.5rem;
   }
-
   .profile-avatar img {
     width: 80px;
     height: 80px;

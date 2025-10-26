@@ -2,7 +2,7 @@
   --bg-gradient: linear-gradient(135deg, #101f1b 0%, #2c4a41 100%);
   --card-bg: #ffffff;
   --text-dark: #1e2b28;
-  --accent-color: #00b894; /* dark gray accent */
+  --accent-color: #264a43; /* dark gray accent */
   --light-text: #f9f9f9;
   --muted: #94a3b8;
 }
@@ -213,7 +213,7 @@
 }
 
 .book-btn:hover {
-  background: #222;
+  background: #3c4b47;
   color: white;
 }
 

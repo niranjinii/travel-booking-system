@@ -110,6 +110,16 @@ app.get("/booking/:id", (req, res) => {
   res.render("booking-details", { booking, page: `booking/{$id}` });
 });
 
+app.get("/admin", (req, res) => {
+  const packages = [
+    { id: 1, name: "Santorini Escape", location: "Greece", price: 1200, duration: "5 days" },
+    { id: 2, name: "Bali Adventure", location: "Indonesia", price: 950, duration: "6 days" },
+    { id: 3, name: "Swiss Alps Tour", location: "Switzerland", price: 1800, duration: "8 days" },
+  ];
+  res.render("admin-dashboard", { packages, page: 'admin' });
+});
+
+
 
 app.use(function (error, req, res, next) {
   // Default error handling function

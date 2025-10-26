@@ -15,7 +15,7 @@
   color: #fff;
   letter-spacing: 1px;
 }
-
+/* --- Layout --- */
 .payment-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -26,18 +26,23 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
+/* --- Summary Card --- */
 .payment-summary {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 2rem;
 }
 
-.payment-summary h2 {
+.payment-summary h2,
+.payment-form h2 {
   font-weight: 600;
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
-  border-bottom: 2px solid var(--accent-color, #00b894);
+  border-bottom: 2px solid var(--accent-color);
   padding-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #fff;
 }
 
 .payment-summary p {
@@ -45,14 +50,7 @@
   font-size: 1.1rem;
 }
 
-.payment-form h2 {
-  font-weight: 600;
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  border-bottom: 2px solid var(--accent-color, #00b894);
-  padding-bottom: 0.5rem;
-}
-
+/* --- Form --- */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -81,8 +79,9 @@
   width: 100%;
 }
 
+/* --- Unified Button Style --- */
 .pay-btn {
-  background: #00b894;
+  background: #264a43;
   color: white;
   border: none;
   padding: 1rem;
@@ -90,17 +89,19 @@
   font-weight: 600;
   font-size: 1.1rem;
   cursor: pointer;
-  transition: background 0.3s ease, transform 0.2s ease;
+  transition: background-color 0.3s ease, transform 0.2s ease;
   width: 100%;
   margin-top: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .pay-btn:hover {
-  background: #019870;
+  background: #3c4b47;
   transform: translateY(-2px);
 }
 
-/* Responsive */
+/* --- Responsive --- */
 @media (max-width: 992px) {
   .payment-container {
     grid-template-columns: 1fr;
