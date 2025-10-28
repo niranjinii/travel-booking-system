@@ -74,7 +74,7 @@ ul {
 /* ------------------------------------------------------------------- */
 
 .navbar {
-    position: absolute;
+    position: absolute; /* changed from fixed */
     top: 0;
     left: 0;
     width: 100%;

@@ -28,6 +28,7 @@ CREATE TABLE Package (
     package_name VARCHAR(100) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     duration_days INT,
+    theme VARCHAR(50),
     FOREIGN KEY (destination_id) REFERENCES Destination(destination_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
@@ -67,6 +68,7 @@ CREATE TABLE Booking (
     package_id INT NOT NULL,
     transport_id INT NOT NULL,
     booking_date DATE NOT NULL,
+    numtravelers INT NOT NULL,
     status VARCHAR(50) DEFAULT 'Pending',
     FOREIGN KEY (user_id) REFERENCES User(user_id)
         ON DELETE CASCADE
