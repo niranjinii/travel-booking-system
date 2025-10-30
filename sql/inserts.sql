@@ -1,6 +1,6 @@
--- ==============
--- INSERT USERS (same as before)
--- ==============
+-- ==================================
+-- 1. USERS (15)
+-- ==================================
 INSERT INTO User (name, email, password, phone) VALUES
 ('Aarav Patel', 'aarav@example.com', 'hashedpass1', '9876543210'),
 ('Meera Shah', 'meera@example.com', 'hashedpass2', '9123456780'),
@@ -18,9 +18,9 @@ INSERT INTO User (name, email, password, phone) VALUES
 ('Isha Reddy', 'isha@example.com', 'hashedpass14', '8855223344'),
 ('Yash Gupta', 'yash@example.com', 'hashedpass15', '9988445566');
 
--- ==============
--- INSERT DESTINATIONS (same)
--- ==============
+-- ==================================
+-- 2. DESTINATIONS (12)
+-- ==================================
 INSERT INTO Destination (name, location, description) VALUES
 ('Goa', 'India', 'Beaches & nightlife'),
 ('Paris', 'France', 'City of Love & Eiffel Tower'),
@@ -35,20 +35,9 @@ INSERT INTO Destination (name, location, description) VALUES
 ('Bali', 'Indonesia', 'Beaches & temples'),
 ('Rome', 'Italy', 'Colosseum & heritage');
 
--- ==============
--- INSERT TRANSPORT OPTIONS (same)
--- ==============
-INSERT INTO Transport (mode, company, price) VALUES
-('Flight', 'Air India', 15000),
-('Flight', 'Emirates', 35000),
-('Flight', 'Singapore Airlines', 40000),
-('Train', 'Indian Railways', 2500),
-('Bus', 'RedBus', 1200),
-('Cruise', 'BlueWave', 50000);
-
--- ==============
--- INSERT PACKAGES (updated: no destination_id now)
--- ==============
+-- ==================================
+-- 3. PACKAGES (20)
+-- ==================================
 INSERT INTO Package (package_name, price, duration_days, theme) VALUES
 ('Goa Beach Fun', 20000, 4, 'Beach'),
 ('Paris Romance', 90000, 5, 'Honeymoon'),
@@ -71,64 +60,92 @@ INSERT INTO Package (package_name, price, duration_days, theme) VALUES
 ('Dubai Desert Safari', 70000, 4, 'Adventure'),
 ('Sydney Wildlife Tour', 105000, 5, 'Nature');
 
--- ==============
--- NEW TABLE: LINK PACKAGES TO DESTINATIONS (M:N)
--- ==============
-INSERT INTO Package_Destination (package_id, destination_id) VALUES
-(1,1),
-(2,2),
-(3,3),
-(4,4),
-(5,5),
-(6,6),
-(7,7),
-(8,8),
-(9,9),
-(10,10),
-(11,11),
-(12,12),
-(13,1),
-(14,9),
-(15,5),
-(16,6),
-(17,11),
-(18,2),
-(19,3),
-(20,8),
--- Example of multi-destination trips:
-(7,10),  -- NY + London combo
-(3,2);   -- Dubai + Paris combo
+-- ==================================
+-- 4. PACKAGE_DESTINATION (Multi-destination links)
+-- ==================================
+-- Each package linked to 1–3 destinations
 
--- =============
--- LINK PACKAGE WITH TRANSPORT (same)
--- =============
+INSERT INTO Package_Destination VALUES
+(1, 1, 1), (1, 11, 2),
+(2, 2, 1), (2, 10, 2),
+(3, 3, 1), (3, 2, 2),
+(4, 4, 1),
+(5, 5, 1), (5, 1, 2),
+(6, 6, 1), (6, 9, 2),
+(7, 7, 1),
+(8, 8, 1), (8, 7, 2),
+(9, 9, 1), (9, 1, 2),
+(10, 10, 1), (10, 12, 2),
+(11, 11, 1),
+(12, 12, 1), (12, 10, 2),
+(13, 1, 1), (13, 5, 2),
+(14, 9, 1), (14, 3, 2),
+(15, 5, 1),
+(16, 6, 1), (16, 4, 2),
+(17, 11, 1),
+(18, 2, 1), (18, 6, 2),
+(19, 3, 1),
+(20, 8, 1), (20, 5, 2);
+
+-- ==================================
+-- 5. TRANSPORT (6)
+-- ==================================
+INSERT INTO Transport (mode, company, price) VALUES
+('Flight', 'Air India', 15000),
+('Flight', 'Emirates', 35000),
+('Flight', 'Singapore Airlines', 40000),
+('Train', 'Indian Railways', 2500),
+('Bus', 'RedBus', 1200),
+('Cruise', 'BlueWave', 50000);
+
+-- ==================================
+-- 6. PACKAGE_TRANSPORT (Many-to-many)
+-- ==================================
 INSERT INTO Package_Transport VALUES
-(1,1),(1,4),(2,2),(3,2),(4,1),(5,3),(6,3),(7,2),(8,2),(9,4),
-(10,1),(11,1),(12,1),(13,4),(14,1),(15,2),(16,3),(17,1),(18,2),(19,2);
+(1,1),(1,4),
+(2,2),
+(3,2),(3,1),
+(4,1),
+(5,3),
+(6,3),
+(7,2),
+(8,2),
+(9,4),(9,5),
+(10,1),
+(11,1),
+(12,1),
+(13,4),
+(14,1),
+(15,2),
+(16,3),
+(17,1),
+(18,2),
+(19,2),
+(20,2);
 
--- =============
--- BOOKINGS (updated: start_date & end_date)
--- =============
-INSERT INTO Booking (user_id, package_id, transport_id, start_date, end_date, numtravelers, status) VALUES
-(1,1,1,'2025-01-12','2025-01-16',2,'Confirmed'),
-(2,3,2,'2025-02-10','2025-02-15',1,'Confirmed'),
-(3,5,3,'2025-03-05','2025-03-09',2,'Pending'),
-(4,9,4,'2025-03-15','2025-03-18',3,'Confirmed'),
-(5,2,2,'2025-04-20','2025-04-25',2,'Confirmed'),
-(6,6,3,'2025-04-25','2025-04-29',4,'Confirmed'),
-(7,10,1,'2025-05-11','2025-05-17',1,'Pending'),
-(8,11,1,'2025-06-09','2025-06-14',2,'Confirmed'),
-(9,14,1,'2025-06-30','2025-07-03',3,'Confirmed'),
-(10,7,2,'2025-07-18','2025-07-23',1,'Pending'),
-(11,12,1,'2025-08-05','2025-08-11',2,'Confirmed'),
-(12,15,2,'2025-09-14','2025-09-18',2,'Confirmed'),
-(13,1,4,'2025-09-25','2025-09-29',1,'Confirmed'),
-(14,19,2,'2025-10-10','2025-10-14',2,'Pending'),
-(15,20,2,'2025-10-15','2025-10-20',3,'Confirmed');
+-- ==================================
+-- 7. BOOKINGS (15)
+-- ==================================
+INSERT INTO Booking (user_id, package_id, transport_id, booking_date, travel_start_date, numtravelers, status) VALUES
+(1,1,1,'2025-01-05','2025-01-12',2,'Confirmed'),
+(2,3,2,'2025-02-01','2025-02-10',1,'Confirmed'),
+(3,5,3,'2025-02-20','2025-03-05',2,'Pending'),
+(4,9,4,'2025-03-10','2025-03-15',3,'Confirmed'),
+(5,2,2,'2025-03-28','2025-04-20',2,'Confirmed'),
+(6,6,3,'2025-04-10','2025-04-25',4,'Confirmed'),
+(7,10,1,'2025-05-01','2025-05-11',1,'Pending'),
+(8,11,1,'2025-05-25','2025-06-09',2,'Confirmed'),
+(9,14,1,'2025-06-10','2025-06-30',3,'Confirmed'),
+(10,7,2,'2025-06-20','2025-07-18',1,'Pending'),
+(11,12,1,'2025-07-15','2025-08-05',2,'Confirmed'),
+(12,15,2,'2025-08-25','2025-09-14',2,'Confirmed'),
+(13,1,4,'2025-09-10','2025-09-25',1,'Confirmed'),
+(14,19,2,'2025-09-25','2025-10-10',2,'Pending'),
+(15,20,2,'2025-09-28','2025-10-15',3,'Confirmed');
 
--- =============
--- PAYMENTS (same)
--- =============
+-- ==================================
+-- 8. PAYMENTS (15)
+-- ==================================
 INSERT INTO Payment (booking_id, amount, payment_date, method) VALUES
 (1,40000,'2025-01-12','UPI'),
 (2,75000,'2025-02-10','Credit Card'),

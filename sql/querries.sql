@@ -132,3 +132,27 @@ SELECT
 FROM Package p
 LEFT JOIN Booking b ON p.package_id = b.package_id
 GROUP BY p.package_id;
+
+--procedure to get booking details fully, prolly better to use this in the booking page
+
+DELIMITER $$
+
+CREATE PROCEDURE GetBookingWithEndDate()
+BEGIN
+    SELECT 
+        b.booking_id,
+        u.name AS user_name,
+        p.package_name,
+        b.travel_start_date,
+        DATE_ADD(b.travel_start_date, INTERVAL p.duration_days DAY) AS travel_end_date,
+        b.status,
+        b.numtravelers,
+        t.mode AS transport_mode,
+        t.company AS transport_company
+    FROM Booking b
+    JOIN User u ON b.user_id = u.user_id
+    JOIN Package p ON b.package_id = p.package_id
+    JOIN Transport t ON b.transport_id = t.transport_id;
+END $$
+
+DELIMITER ;
