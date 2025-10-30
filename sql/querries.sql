@@ -123,3 +123,12 @@ BEGIN
 END //
 DELIMITER ;
 
+--window func
+-- Rank packages by popularity (number of bookings)
+SELECT 
+    p.package_name,
+    COUNT(b.booking_id) AS total_bookings,
+    RANK() OVER (ORDER BY COUNT(b.booking_id) DESC) AS popularity_rank
+FROM Package p
+LEFT JOIN Booking b ON p.package_id = b.package_id
+GROUP BY p.package_id;
