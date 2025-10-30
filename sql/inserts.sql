@@ -1,5 +1,5 @@
 -- ==============
--- INSERT USERS (15)
+-- INSERT USERS (same as before)
 -- ==============
 INSERT INTO User (name, email, password, phone) VALUES
 ('Aarav Patel', 'aarav@example.com', 'hashedpass1', '9876543210'),
@@ -19,7 +19,7 @@ INSERT INTO User (name, email, password, phone) VALUES
 ('Yash Gupta', 'yash@example.com', 'hashedpass15', '9988445566');
 
 -- ==============
--- INSERT DESTINATIONS (12)
+-- INSERT DESTINATIONS (same)
 -- ==============
 INSERT INTO Destination (name, location, description) VALUES
 ('Goa', 'India', 'Beaches & nightlife'),
@@ -36,7 +36,7 @@ INSERT INTO Destination (name, location, description) VALUES
 ('Rome', 'Italy', 'Colosseum & heritage');
 
 -- ==============
--- INSERT TRANSPORT OPTIONS (6)
+-- INSERT TRANSPORT OPTIONS (same)
 -- ==============
 INSERT INTO Transport (mode, company, price) VALUES
 ('Flight', 'Air India', 15000),
@@ -47,61 +47,88 @@ INSERT INTO Transport (mode, company, price) VALUES
 ('Cruise', 'BlueWave', 50000);
 
 -- ==============
--- INSERT PACKAGES (20)
+-- INSERT PACKAGES (updated: no destination_id now)
 -- ==============
-INSERT INTO Package (destination_id, package_name, price, duration_days, theme) VALUES
-(1, 'Goa Beach Fun', 20000, 4, 'Beach'),
-(2, 'Paris Romance', 90000, 5, 'Honeymoon'),
-(3, 'Dubai Luxury Trip', 75000, 5, 'Luxury'),
-(4, 'Tokyo Anime Tour', 85000, 6, 'Adventure'),
-(5, 'Maldives Water Villa', 150000, 4, 'Luxury'),
-(6, 'Singapore Family Pack', 60000, 4, 'Family'),
-(7, 'NY Times Square Tour', 120000, 5, 'City Tour'),
-(8, 'Sydney Opera Visit', 110000, 5, 'Adventure'),
-(9, 'Bangkok Budget Trip', 30000, 3, 'Budget'),
-(10, 'London Heritage Tour', 95000, 6, 'Heritage'),
-(11, 'Bali Nature Retreat', 50000, 5, 'Nature'),
-(12, 'Rome Ancient Wonders', 100000, 6, 'Heritage'),
-(1, 'Goa Monsoon Special', 18000, 4, 'Seasonal'),
-(9, 'Bangkok Party Nights', 32000, 3, 'Nightlife'),
-(5, 'Maldives Couples Paradise', 155000, 4, 'Honeymoon'),
-(6, 'Singapore Tech Tour', 65000, 5, 'Education'),
-(11, 'Bali Yoga Escape', 45000, 6, 'Wellness'),
-(2, 'Paris Family Trip', 87000, 6, 'Family'),
-(3, 'Dubai Desert Safari', 70000, 4, 'Adventure'),
-(8, 'Sydney Wildlife Tour', 105000, 5, 'Nature');
+INSERT INTO Package (package_name, price, duration_days, theme) VALUES
+('Goa Beach Fun', 20000, 4, 'Beach'),
+('Paris Romance', 90000, 5, 'Honeymoon'),
+('Dubai Luxury Trip', 75000, 5, 'Luxury'),
+('Tokyo Anime Tour', 85000, 6, 'Adventure'),
+('Maldives Water Villa', 150000, 4, 'Luxury'),
+('Singapore Family Pack', 60000, 4, 'Family'),
+('NY Times Square Tour', 120000, 5, 'City Tour'),
+('Sydney Opera Visit', 110000, 5, 'Adventure'),
+('Bangkok Budget Trip', 30000, 3, 'Budget'),
+('London Heritage Tour', 95000, 6, 'Heritage'),
+('Bali Nature Retreat', 50000, 5, 'Nature'),
+('Rome Ancient Wonders', 100000, 6, 'Heritage'),
+('Goa Monsoon Special', 18000, 4, 'Seasonal'),
+('Bangkok Party Nights', 32000, 3, 'Nightlife'),
+('Maldives Couples Paradise', 155000, 4, 'Honeymoon'),
+('Singapore Tech Tour', 65000, 5, 'Education'),
+('Bali Yoga Escape', 45000, 6, 'Wellness'),
+('Paris Family Trip', 87000, 6, 'Family'),
+('Dubai Desert Safari', 70000, 4, 'Adventure'),
+('Sydney Wildlife Tour', 105000, 5, 'Nature');
 
 -- ==============
--- LINK PACKAGE WITH TRANSPORT (many-to-many)
--- Make at least 2 options per package
--- To keep it small: Flights only for foreign trips, flight+train/bus for Goa/Bangkok
+-- NEW TABLE: LINK PACKAGES TO DESTINATIONS (M:N)
+-- ==============
+INSERT INTO Package_Destination (package_id, destination_id) VALUES
+(1,1),
+(2,2),
+(3,3),
+(4,4),
+(5,5),
+(6,6),
+(7,7),
+(8,8),
+(9,9),
+(10,10),
+(11,11),
+(12,12),
+(13,1),
+(14,9),
+(15,5),
+(16,6),
+(17,11),
+(18,2),
+(19,3),
+(20,8),
+-- Example of multi-destination trips:
+(7,10),  -- NY + London combo
+(3,2);   -- Dubai + Paris combo
+
+-- =============
+-- LINK PACKAGE WITH TRANSPORT (same)
+-- =============
 INSERT INTO Package_Transport VALUES
 (1,1),(1,4),(2,2),(3,2),(4,1),(5,3),(6,3),(7,2),(8,2),(9,4),
 (10,1),(11,1),(12,1),(13,4),(14,1),(15,2),(16,3),(17,1),(18,2),(19,2);
 
 -- =============
--- BOOKINGS (15)
+-- BOOKINGS (updated: start_date & end_date)
 -- =============
-INSERT INTO Booking (user_id, package_id, transport_id, booking_date, numtravelers, status) VALUES
-(1,1,1,'2025-01-12',2,'Confirmed'),
-(2,3,2,'2025-02-10',1,'Confirmed'),
-(3,5,3,'2025-03-05',2,'Pending'),
-(4,9,4,'2025-03-15',3,'Confirmed'),
-(5,2,2,'2025-04-20',2,'Confirmed'),
-(6,6,3,'2025-04-25',4,'Confirmed'),
-(7,10,1,'2025-05-11',1,'Pending'),
-(8,11,1,'2025-06-09',2,'Confirmed'),
-(9,14,1,'2025-06-30',3,'Confirmed'),
-(10,7,2,'2025-07-18',1,'Pending'),
-(11,12,1,'2025-08-05',2,'Confirmed'),
-(12,15,2,'2025-09-14',2,'Confirmed'),
-(13,1,4,'2025-09-25',1,'Confirmed'),
-(14,19,2,'2025-10-10',2,'Pending'),
-(15,20,2,'2025-10-15',3,'Confirmed');
+INSERT INTO Booking (user_id, package_id, transport_id, start_date, end_date, numtravelers, status) VALUES
+(1,1,1,'2025-01-12','2025-01-16',2,'Confirmed'),
+(2,3,2,'2025-02-10','2025-02-15',1,'Confirmed'),
+(3,5,3,'2025-03-05','2025-03-09',2,'Pending'),
+(4,9,4,'2025-03-15','2025-03-18',3,'Confirmed'),
+(5,2,2,'2025-04-20','2025-04-25',2,'Confirmed'),
+(6,6,3,'2025-04-25','2025-04-29',4,'Confirmed'),
+(7,10,1,'2025-05-11','2025-05-17',1,'Pending'),
+(8,11,1,'2025-06-09','2025-06-14',2,'Confirmed'),
+(9,14,1,'2025-06-30','2025-07-03',3,'Confirmed'),
+(10,7,2,'2025-07-18','2025-07-23',1,'Pending'),
+(11,12,1,'2025-08-05','2025-08-11',2,'Confirmed'),
+(12,15,2,'2025-09-14','2025-09-18',2,'Confirmed'),
+(13,1,4,'2025-09-25','2025-09-29',1,'Confirmed'),
+(14,19,2,'2025-10-10','2025-10-14',2,'Pending'),
+(15,20,2,'2025-10-15','2025-10-20',3,'Confirmed');
 
 -- =============
--- PAYMENTS (15)
--- derive: amount = package price * numtravelers
+-- PAYMENTS (same)
+-- =============
 INSERT INTO Payment (booking_id, amount, payment_date, method) VALUES
 (1,40000,'2025-01-12','UPI'),
 (2,75000,'2025-02-10','Credit Card'),

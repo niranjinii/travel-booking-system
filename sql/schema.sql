@@ -24,18 +24,30 @@ CREATE TABLE Destination (
 -- ===========================
 CREATE TABLE Package (
     package_id INT PRIMARY KEY AUTO_INCREMENT,
-    destination_id INT NOT NULL,
     package_name VARCHAR(100) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     duration_days INT,
-    theme VARCHAR(50),
+    theme VARCHAR(50)
+);
+
+-- ===========================
+-- 4. Package_Destination Table (M:N relationship)
+-- ===========================
+CREATE TABLE Package_Destination (
+    package_id INT,
+    destination_id INT,
+    sequence_no INT, -- optional, for order of travel
+    PRIMARY KEY (package_id, destination_id),
+    FOREIGN KEY (package_id) REFERENCES Package(package_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
     FOREIGN KEY (destination_id) REFERENCES Destination(destination_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
 -- ===========================
--- 4. Transport Table
+-- 5. Transport Table
 -- ===========================
 CREATE TABLE Transport (
     transport_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -45,7 +57,7 @@ CREATE TABLE Transport (
 );
 
 -- ===========================
--- 5. Package_Transport Table (M:N relationship)
+-- 6. Package_Transport Table (M:N relationship)
 -- ===========================
 CREATE TABLE Package_Transport (
     package_id INT,
@@ -60,14 +72,16 @@ CREATE TABLE Package_Transport (
 );
 
 -- ===========================
--- 6. Booking Table
+-- 7. Booking Table
 -- ===========================
 CREATE TABLE Booking (
     booking_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     package_id INT NOT NULL,
     transport_id INT NOT NULL,
-    booking_date DATE NOT NULL,
+    booking_date DATE NOT NULL,          -- when the user booked
+    travel_start_date DATE NOT NULL,     -- when the package begins
+    travel_end_date DATE NOT NULL,       -- derived or chosen end date
     numtravelers INT NOT NULL,
     status VARCHAR(50) DEFAULT 'Pending',
     FOREIGN KEY (user_id) REFERENCES User(user_id)
@@ -82,7 +96,7 @@ CREATE TABLE Booking (
 );
 
 -- ===========================
--- 7. Payment Table
+-- 8. Payment Table
 -- ===========================
 CREATE TABLE Payment (
     payment_id INT PRIMARY KEY AUTO_INCREMENT,

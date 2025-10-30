@@ -52,4 +52,74 @@ JOIN Destination d ON p.destination_id = d.destination_id
 GROUP BY d.destination_id
 ORDER BY total_bookings DESC;
 
---theres a few more but we  might not really use them, the ejs files themselves dont have much scope for complex ahh querries but ive kept some over here just incase, we can def add features for these querries in the frontend later
+
+DELIMITER //
+CREATE TRIGGER trg_set_travel_end
+BEFORE INSERT ON Booking
+FOR EACH ROW
+BEGIN
+  DECLARE trip_days INT;
+  SELECT duration_days INTO trip_days
+  FROM Package WHERE package_id = NEW.package_id;
+  
+  SET NEW.travel_end = DATE_ADD(NEW.travel_start, INTERVAL trip_days DAY);
+END//
+DELIMITER ;
+
+--  Procedure to book a package
+DELIMITER //
+CREATE PROCEDURE MakeBooking (
+    IN p_user_id INT,
+    IN p_package_id INT,
+    IN p_transport_id INT,
+    IN p_numtravelers INT,
+    IN p_status VARCHAR(20)
+)
+BEGIN
+    INSERT INTO Booking (user_id, package_id, transport_id, booking_date, numtravelers, status)
+    VALUES (p_user_id, p_package_id, p_transport_id, CURDATE(), p_numtravelers, p_status);
+END //
+DELIMITER ;
+
+-- Procedure to update booking status
+DELIMITER //
+CREATE PROCEDURE UpdateBookingStatus (
+    IN p_booking_id INT,
+    IN p_status VARCHAR(20)
+)
+BEGIN
+    UPDATE Booking
+    SET status = p_status
+    WHERE booking_id = p_booking_id;
+END //
+DELIMITER ;
+
+--  Function to calculate total spent by a user
+DELIMITER //
+CREATE FUNCTION TotalSpentByUser(u_id INT)
+RETURNS DECIMAL(12,2)
+DETERMINISTIC
+BEGIN
+    DECLARE total DECIMAL(12,2);
+    SELECT IFNULL(SUM(amount), 0) INTO total
+    FROM Payment pay
+    JOIN Booking b ON pay.booking_id = b.booking_id
+    WHERE b.user_id = u_id;
+    RETURN total;
+END //
+DELIMITER ;
+
+--  Function to get average package price by theme
+DELIMITER //
+CREATE FUNCTION AvgPriceByTheme(theme_name VARCHAR(50))
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+    DECLARE avg_price DECIMAL(10,2);
+    SELECT AVG(price) INTO avg_price
+    FROM Package
+    WHERE theme = theme_name;
+    RETURN avg_price;
+END //
+DELIMITER ;
+
