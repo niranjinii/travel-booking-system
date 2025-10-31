@@ -15,8 +15,7 @@ CREATE TABLE User (
 CREATE TABLE Destination (
     destination_id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
-    location VARCHAR(100),
-    description TEXT
+    location VARCHAR(100)
 );
 
 -- ===========================
@@ -25,6 +24,7 @@ CREATE TABLE Destination (
 CREATE TABLE Package (
     package_id INT PRIMARY KEY AUTO_INCREMENT,
     package_name VARCHAR(100) NOT NULL,
+    description TEXT,
     price DECIMAL(10,2) NOT NULL,
     duration_days INT,
     theme VARCHAR(50)
@@ -36,7 +36,7 @@ CREATE TABLE Package (
 CREATE TABLE Package_Destination (
     package_id INT,
     destination_id INT,
-    sequence_no INT, -- optional, for order of travel
+    sequence_no INT,
     PRIMARY KEY (package_id, destination_id),
     FOREIGN KEY (package_id) REFERENCES Package(package_id)
         ON DELETE CASCADE
@@ -51,7 +51,7 @@ CREATE TABLE Package_Destination (
 -- ===========================
 CREATE TABLE Transport (
     transport_id INT PRIMARY KEY AUTO_INCREMENT,
-    mode VARCHAR(50) NOT NULL,           -- e.g. flight, train, bus
+    mode VARCHAR(50) NOT NULL,
     company VARCHAR(100),
     price DECIMAL(10,2)
 );
@@ -79,9 +79,8 @@ CREATE TABLE Booking (
     user_id INT NOT NULL,
     package_id INT NOT NULL,
     transport_id INT NOT NULL,
-    booking_date DATE NOT NULL,          -- when the user booked
-    travel_start_date DATE NOT NULL,     -- when the package begins
-    travel_end_date DATE NOT NULL,       -- derived or chosen end date
+    booking_date DATE NOT NULL,
+    travel_start_date DATE NOT NULL,
     numtravelers INT NOT NULL,
     status VARCHAR(50) DEFAULT 'Pending',
     FOREIGN KEY (user_id) REFERENCES User(user_id)
@@ -100,10 +99,10 @@ CREATE TABLE Booking (
 -- ===========================
 CREATE TABLE Payment (
     payment_id INT PRIMARY KEY AUTO_INCREMENT,
-    booking_id INT UNIQUE NOT NULL,      -- 1:1 with booking
+    booking_id INT UNIQUE NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     payment_date DATE NOT NULL,
-    method VARCHAR(50),                  -- e.g. credit card, UPI
+    method VARCHAR(50),
     FOREIGN KEY (booking_id) REFERENCES Booking(booking_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
