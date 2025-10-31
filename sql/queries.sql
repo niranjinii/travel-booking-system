@@ -35,22 +35,6 @@ BEGIN
 END //
 DELIMITER ;
 
--- =========================================
--- Trigger: Auto-calculate travel_end_date
--- (travel_end_date already exists in schema)
--- =========================================
-DELIMITER //
-CREATE TRIGGER trg_set_travel_end
-BEFORE INSERT ON Booking
-FOR EACH ROW
-BEGIN
-  DECLARE trip_days INT;
-  SELECT duration_days INTO trip_days
-  FROM Package WHERE package_id = NEW.package_id;
-
-  SET NEW.travel_end_date = DATE_ADD(NEW.travel_start_date, INTERVAL trip_days DAY);
-END//
-DELIMITER ;
 
 -- =========================================
 -- View: Booking Summary (All destinations per booking)
@@ -192,3 +176,56 @@ JOIN Package p ON b.package_id = p.package_id
 GROUP BY p.package_id
 ORDER BY total_revenue DESC
 LIMIT 5;
+
+-- =========================================
+-- Sample Queries Using Procedures, Functions & Views
+-- =========================================
+
+--  CALL PROCEDURE: Make a new booking for user 3, package 2
+CALL MakeBooking(3, 2, 4, 2, 'Confirmed', '2025-11-15');
+
+--CALL PROCEDURE: Update booking status to Cancelled
+CALL UpdateBookingStatus(1, 'Cancelled');
+
+--  CALL PROCEDURE: Get all bookings with end dates
+CALL GetBookingWithEndDate();
+
+--  USE FUNCTION: Get total spent by user 1
+SELECT TotalSpentByUser(1) AS total_spent;
+
+--  USE FUNCTION: Get all users with their total spending
+SELECT 
+    u.user_id,
+    u.name,
+    u.email,
+    TotalSpentByUser(u.user_id) AS total_spent
+FROM User u
+ORDER BY total_spent DESC;
+
+--  USE FUNCTION: Average price for Cultural packages
+SELECT AvgPriceByTheme('Cultural') AS avg_cultural_price;
+
+-- USE FUNCTION: Compare average prices across all themes
+SELECT DISTINCT
+    theme,
+    AvgPriceByTheme(theme) AS avg_price
+FROM Package
+ORDER BY avg_price DESC;
+
+--  USE VIEW: Get all booking summaries
+SELECT * FROM BookingSummary;
+
+--  USE VIEW: Get confirmed bookings only
+SELECT * FROM BookingSummary WHERE status = 'Confirmed';
+
+--  USE VIEW: Get high-value bookings (amount > 100000)
+SELECT * FROM BookingSummary WHERE amount > 100000 ORDER BY amount DESC;
+
+--  USE VIEW: Count bookings per customer
+SELECT 
+    customer,
+    COUNT(*) AS total_bookings,
+    SUM(amount) AS total_spent
+FROM BookingSummary
+GROUP BY customer
+ORDER BY total_spent DESC;
