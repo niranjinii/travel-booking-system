@@ -1,19 +1,6 @@
 -- =====================================================
 -- ✅ SCHEMA-COMPATIBLE TRIGGERS, VIEWS & PROCEDURES
 -- =====================================================
-
--- =========================================
--- Drop existing objects if they exist (for clean re-run)
--- =========================================
-DROP TRIGGER IF EXISTS auto_payment_amount;
-DROP TRIGGER IF EXISTS trg_set_travel_end;
-DROP VIEW IF EXISTS BookingSummary;
-DROP PROCEDURE IF EXISTS MakeBooking;
-DROP PROCEDURE IF EXISTS UpdateBookingStatus;
-DROP FUNCTION IF EXISTS TotalSpentByUser;
-DROP FUNCTION IF EXISTS AvgPriceByTheme;
-DROP PROCEDURE IF EXISTS GetBookingWithEndDate;
-
 -- =========================================
 -- Trigger: Automatically set payment amount
 -- =========================================
@@ -229,3 +216,5 @@ SELECT
 FROM BookingSummary
 GROUP BY customer
 ORDER BY total_spent DESC;
+
+ALTER TABLE package ADD FULLTEXT(description, package_name, theme);

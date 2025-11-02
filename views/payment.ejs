@@ -3,14 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Payment - Travel</title>
+    <title>Payment - <%= package.package_name %></title>
 
-    <!-- FONT -->
+    <!-- FONT + BOOTSTRAP -->
     <link
       href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap"
       rel="stylesheet"
     />
-
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -18,71 +17,87 @@
     <link rel="stylesheet" href="/styles/style.css" />
     <link rel="stylesheet" href="/styles/payment.css" />
   </head>
+
   <body>
     <%- include('partials/navbar') %>
 
     <div class="payment-wrapper">
       <div class="container">
-        <h1 class="payment-heading">Complete Your Payment</h1>
+        <h1 class="payment-heading">Complete Your Booking</h1>
 
         <div class="payment-container">
+          <!-- Booking Summary -->
           <div class="payment-summary">
             <h2>Booking Summary</h2>
-            <p><strong>Package:</strong> <%= booking.packageName %></p>
-            <p><strong>Date:</strong> <%= booking.date %></p>
-            <p><strong>Travelers:</strong> <%= booking.people %></p>
-            <p><strong>Total Price:</strong> $<%= booking.totalPrice %></p>
+            <p><strong>Package:</strong> <%= package.package_name %></p>
+            <p><strong>Description:</strong> <%= package.description %></p>
+            <p><strong>Travelers:</strong> <%= travelers %></p>
+            <p>
+              <strong>Base Price per Traveler:</strong> ₹<%= package.price.toLocaleString() %>
+            </p>
+            <p><strong>Discount:</strong> <%= discount %>%</p>
+            <p>
+              <strong>Total (before transport):</strong> ₹<span id="baseTotal"><%= totalPrice %></span>
+            </p>
+
+            <!-- Transport Selection -->
+            <div class="transport-select">
+              <label for="transport"><strong>Select Transport Option</strong></label>
+              <select id="transport" class="form-select">
+                <option value="0" data-price="0">-- Choose Transport --</option>
+                <% transports.forEach(t => { %>
+                  <option value="<%= t.transport_id %>" data-price="<%= t.price %>">
+                    <%= t.mode %> - <%= t.company %> (₹<%= t.price.toLocaleString() %>)
+                  </option>
+                <% }) %>
+              </select>
+            </div>
+
+            <hr />
+            <h3>Total Payable: ₹<span id="finalTotal"><%= totalPrice %></span></h3>
           </div>
 
+          <!-- Payment Form -->
           <div class="payment-form">
             <h2>Payment Details</h2>
             <form action="/process-payment" method="POST">
               <div class="form-group">
-                <label for="cardName">Name on Card</label>
-                <input type="text" id="cardName" name="cardName" required />
+                <label for="method">Payment Method</label>
+                <select id="method" name="method" class="form-select" required>
+                  <option value="">-- Select Payment Method --</option>
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Debit Card">Debit Card</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Net Banking">Net Banking</option>
+                  <option value="Wallet">Wallet</option>
+                </select>
               </div>
 
-              <div class="form-group">
-                <label for="cardNumber">Card Number</label>
-                <input
-                  type="text"
-                  id="cardNumber"
-                  name="cardNumber"
-                  maxlength="16"
-                  required
-                />
-              </div>
+              <!-- Hidden booking info -->
+              <input type="hidden" name="package_id" value="<%= package.package_id %>" />
+              <input type="hidden" name="travelers" value="<%= travelers %>" />
+              <input type="hidden" name="total" id="hiddenTotal" value="<%= totalPrice %>" />
 
-              <div class="form-row">
-                <div class="form-group small">
-                  <label for="expiry">Expiry Date</label>
-                  <input
-                    type="text"
-                    id="expiry"
-                    name="expiry"
-                    placeholder="MM/YY"
-                    required
-                  />
-                </div>
-
-                <div class="form-group small">
-                  <label for="cvv">CVV</label>
-                  <input
-                    type="text"
-                    id="cvv"
-                    name="cvv"
-                    maxlength="3"
-                    required
-                  />
-                </div>
-              </div>
-
-              <button type="submit" class="pay-btn">Pay Now</button>
+              <button type="submit" class="pay-btn">Confirm Booking</button>
             </form>
           </div>
         </div>
       </div>
     </div>
+
+    <script>
+      const baseTotal = parseFloat("<%= totalPrice %>");
+      const transportSelect = document.getElementById("transport");
+      const finalTotalEl = document.getElementById("finalTotal");
+      const hiddenTotal = document.getElementById("hiddenTotal");
+
+      transportSelect.addEventListener("change", function () {
+        const transportPrice = parseFloat(this.selectedOptions[0].dataset.price || 0);
+        const newTotal = baseTotal + transportPrice;
+        finalTotalEl.textContent = newTotal.toFixed(2);
+        hiddenTotal.value = newTotal.toFixed(2);
+      });
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   </body>

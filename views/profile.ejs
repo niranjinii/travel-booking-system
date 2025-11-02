@@ -24,30 +24,31 @@
           <p><%= user.email %></p>
         </div>
         <div class="profile-avatar">
-          <img src="<%= user.avatar %>" alt="User Avatar">
+          <img src="https://via.placeholder.com/150?text=Traveler" alt="User Avatar" />
         </div>
       </div>
 
       <div class="bookings-section">
         <h2>Your Bookings</h2>
 
-        <% if (bookings.length > 0) { %>
+        <% if (bookings && bookings.length > 0) { %>
           <div class="bookings-grid">
             <% bookings.forEach(booking => { %>
               <div class="booking-card">
-                <div class="booking-image" style="background-image: url('<%= booking.image %>');"></div>
+                <div class="booking-image" style="background-image: url('<%= booking.image || "https://via.placeholder.com/300x200?text=Travel+Package" %>');"></div>
                 <div class="booking-details">
-                  <h3><%= booking.packageName %></h3>
-                  <p><strong>Date:</strong> <%= booking.date %></p>
-                  <p><strong>Travelers:</strong> <%= booking.people %></p>
-                  <p><strong>Total:</strong> $<%= booking.totalPrice %></p>
-                  <a href="/package/<%= booking.packageId %>" class="details-btn">View Details</a>
+                  <h3><%= booking.package_name %></h3>
+                  <p><strong>Booking Date:</strong> <%= booking.booking_date.toISOString().split('T')[0] %></p>
+                  <p><strong>Travel Start:</strong> <%= booking.travel_start_date.toISOString().split('T')[0] %></p>
+                  <p><strong>Travelers:</strong> <%= booking.numtravelers %></p>
+                  <p><strong>Total:</strong> ₹<%= booking.total_price.toLocaleString() %></p>
+                  <a href="" class="details-btn">View Details</a>
                 </div>
               </div>
             <% }) %>
           </div>
         <% } else { %>
-          <p class="no-bookings">You haven’t made any bookings yet. Start exploring!</p>
+          <p class="no-bookings">You haven't made any bookings yet. Start exploring!</p>
         <% } %>
       </div>
     </div>

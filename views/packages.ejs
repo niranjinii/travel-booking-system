@@ -45,47 +45,38 @@
       <main class="packages-grid-wrapper">
         <!-- Filter & Search Bar -->
         <section class="package-filters container">
-          <div class="filter-bar">
-            <input
-              type="text"
-              class="form-control search-input"
-              placeholder="Search destinations..."
-            />
+          <form class="filter-bar" action="/packages" method="get">
+          <input
+          type="text"
+          name="q"
+          value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+          class="form-control search-input"
+          placeholder="Search destinations or descriptions..."
+          />
 
-            <select class="form-select filter-select">
-              <option selected disabled>Filter by Theme</option>
-              <option>Beaches</option>
-              <option>Mountains</option>
-              <option>Adventure</option>
-              <option>Culture</option>
-              <option>Wildlife</option>
-              <option>Cruises</option>
-            </select>
+          <select class="form-select filter-select" name="theme">
+          <option value="">All Themes</option>
+          <% for (const theme of themes) { %>
+            <option value="<%= theme.theme %>" 
+            <%= theme.theme === selectedTheme ? 'selected' : '' %>>
+            <%= theme.theme %>
+          </option>
+          <% } %>
+          </select>
 
-            <button class="btn filter-btn">Search</button>
-          </div>
-        </section>
+        <button type="submit" class="btn filter-btn">Search</button>
+        </form>
+      </section>
+
 
         <!-- Packages Grid -->
         <div class="packages-grid">
-          <% const packages = [ { title: 'The Maldivian Escape', price: '2,999',
-          days: '7 Days', image: '/images/carousel1.jpg', theme: 'Beaches' }, {
-          title: 'Swiss Alps Grand Tour', price: '4,500', days: '10 Days',
-          image: '/images/placeholder-package-2.jpg', theme: 'Mountains' }, {
-          title: 'Kyoto Cultural Journey', price: '3,200', days: '9 Days',
-          image: '/images/placeholder-package-3.jpg', theme: 'Culture' }, {
-          title: 'Patagonia Wilderness Trek', price: '3,850', days: '12 Days',
-          image: '/images/placeholder-package-4.jpg', theme: 'Adventure' }, {
-          title: 'Mediterranean Cruise', price: '2,100', days: '5 Days', image:
-          '/images/placeholder-package-5.jpg', theme: 'Cruises' }, { title:
-          'Safari in Serengeti', price: '5,100', days: '8 Days', image:
-          '/images/placeholder-package-6.jpg', theme: 'Wildlife' } ]; %> <%
-          packages.forEach(pkg => { %>
+          <%packages.forEach(pkg => { %>
           <div class="package-card shadow-sm">
             <div class="package-image-container">
               <img
-                src="<%= pkg.image %>"
-                alt="<%= pkg.title %>"
+                src="/images/carousel1.jpg"
+                alt="<%= pkg.package_name %>"
                 class="package-image"
               />
               <span class="package-theme badge rounded-pill"
@@ -94,11 +85,11 @@
             </div>
 
             <div class="package-info">
-              <h3 class="package-title"><%= pkg.title %></h3>
+              <h3 class="package-title"><%= pkg.package_name %></h3>
 
               <div class="package-details">
-                <span class="package-days"><%= pkg.days %></span>
-                <span class="package-price">$<%= pkg.price %></span>
+                <span class="package-days">Days: <%= pkg.duration_days %></span>
+                <span class="package-price">Rs.<%= pkg.price %>/person</span>
               </div>
 
               <a href="#" class="book-btn">Book Tour</a>
@@ -113,5 +104,6 @@
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
       crossorigin="anonymous"
     ></script>
+
   </body>
 </html>

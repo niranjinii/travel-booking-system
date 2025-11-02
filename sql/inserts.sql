@@ -272,3 +272,93 @@ INSERT INTO Payment (payment_id, booking_id, amount, payment_date, method) VALUE
 (13,13,68000,'2025-09-25','UPI'),
 (14,14,175000,'2025-10-10','UPI'),
 (15,15,95000,'2025-10-15','Credit Card');
+
+UPDATE package SET price = CASE package_id
+  WHEN 1 THEN 18000   -- Goa (train/flight)
+  WHEN 2 THEN 48000   -- Golden Triangle (train/flight)
+  WHEN 3 THEN 42000   -- Kerala
+  WHEN 4 THEN 68000   -- Ladakh
+  WHEN 5 THEN 80000   -- Dubai
+  WHEN 6 THEN 110000  -- Paris & Rome
+  WHEN 7 THEN 170000  -- Euro Discovery
+  WHEN 8 THEN 145000  -- Central Europe
+  WHEN 9 THEN 95000   -- London & Scotland
+  WHEN 10 THEN 100000 -- Asian Circuit
+  WHEN 11 THEN 130000 -- Japan
+  WHEN 12 THEN 135000 -- Korea + Japan
+  WHEN 13 THEN 80000  -- Vietnam + Thailand
+  WHEN 14 THEN 65000  -- Singapore Family
+  WHEN 15 THEN 140000 -- Maldives
+  WHEN 16 THEN 50000  -- Bali Wellness
+  WHEN 17 THEN 115000 -- Australia East Coast
+  WHEN 18 THEN 190000 -- USA
+  WHEN 19 THEN 85000  -- Doha + Dubai
+  WHEN 20 THEN 90000  -- Turkey
+  WHEN 21 THEN 15000  -- Goa Monsoon
+  WHEN 22 THEN 60000  -- Himalayas
+  WHEN 23 THEN 155000 -- Bali + Maldives
+  WHEN 24 THEN 80000  -- Backpacker Euro
+  WHEN 25 THEN 100000 -- SE Asia Explorer
+END;
+
+
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE package_transport;
+TRUNCATE TABLE transport;
+SET FOREIGN_KEY_CHECKS = 1;
+
+TRUNCATE TABLE transport;
+
+INSERT INTO transport (transport_id, mode, company, price) VALUES
+(1, 'Train', 'IRCTC Express', 1800),
+(2, 'Flight', 'IndiGo Airlines', 5500),
+(3, 'Flight', 'Air India', 6500),
+(4, 'Flight', 'Vistara', 7200),
+(5, 'Flight', 'Emirates', 35000),
+(6, 'Flight', 'Singapore Airlines', 40000),
+(7, 'Flight', 'Qantas', 38000),
+(8, 'Flight', 'Japan Airlines', 42000),
+(9, 'Flight', 'British Airways', 45000),
+(10, 'Flight', 'Lufthansa', 46000),
+(11, 'Bus', 'RedBus', 1200),
+(12, 'Cruise', 'BlueWave', 50000),
+(13, 'Flight', 'Etihad Airways', 34000),
+(14, 'Flight', 'Thai Airways', 28000),
+(15, 'Train', 'Eurail', 15000),
+(16, 'Flight', 'Qatar Airways', 33000),
+(17, 'Flight', 'Turkish Airlines', 31000);
+
+TRUNCATE TABLE package_transport;
+
+INSERT INTO package_transport (package_id, transport_id) VALUES
+-- Domestic
+(1, 1), (1, 2), (1, 11),         -- Goa: train, IndiGo, bus
+(2, 1), (2, 3),                  -- Golden Triangle: train or Air India
+(3, 1), (3, 2),                  -- Kerala: train or flight
+(4, 2), (4, 3),                  -- Ladakh: domestic flights
+(21, 1), (21, 11),               -- Goa Monsoon: train or bus
+(22, 2), (22, 3),                -- Himalayas: flight
+-- Middle East
+(5, 5), (5, 13),                 -- Dubai: Emirates, Etihad
+(19, 5), (19, 16),               -- Doha + Dubai: Emirates, Qatar Airways
+-- Asia
+(10, 6), (10, 14),               -- Asian Circuit: Singapore Air, Thai Airways
+(13, 14), (13, 6),               -- Vietnam & Thailand: Thai, Singapore
+(14, 6),                         -- Singapore Family: Singapore Air
+(16, 6), (16, 14),               -- Bali: Singapore/Thai
+(25, 6), (25, 14),               -- SE Asia Explorer
+-- Europe
+(6, 10), (6, 15),                -- Paris & Rome: Lufthansa or Eurail
+(7, 15), (7, 9), (7, 10),        -- Euro Discovery: Eurail, British, Lufthansa
+(8, 15), (8, 10),                -- Central Europe: Eurail, Lufthansa
+(9, 9), (9, 10),                 -- UK: British or Lufthansa
+(24, 15),                        -- Backpacker Euro: Eurail
+-- Other international
+(11, 8),                         -- Japan: Japan Airlines
+(12, 8), (12, 14),               -- Korea + Japan: Japan/Thai
+(15, 5), (15, 12),               -- Maldives: Emirates or Cruise
+(17, 7), (17, 10),               -- Australia: Qantas, Lufthansa
+(18, 9), (18, 10),               -- USA: British/Lufthansa
+(20, 17), (20, 9),               -- Turkey: Turkish/British
+(23, 5), (23, 6), (23, 12);      -- Bali + Maldives: Emirates, Singapore, Cruise
+
