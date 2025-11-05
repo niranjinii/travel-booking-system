@@ -121,12 +121,14 @@ ul {
     font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 1px;
+    text-decoration: none;
     transition: all 0.3s ease; /* Changed to all properties with ease */
 }
 
 .log-in-btn:hover {
     background-color: var(--light-text);
     color: var(--dark-green);
+    text-decoration: none;
     transform: translateY(-2px); /* Added subtle lift effect */
 }
 

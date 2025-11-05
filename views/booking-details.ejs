@@ -31,10 +31,7 @@
             <strong>Travelers:</strong> <%= booking.people %>
           </div>
           <div>
-            <strong>Total Price:</strong> $<%= booking.totalPrice %>
-          </div>
-          <div>
-            <strong>Status:</strong> <%= booking.status %>
+            <strong>Total Price:</strong> Rs. <%= booking.totalPrice %>
           </div>
           <div>
             <strong>Booking ID:</strong> <%= booking.id %>
@@ -43,15 +40,23 @@
 
         <div class="booking-actions">
           <button class="btn-primary">Download Invoice</button>
-          <button class="btn-outline">Cancel Booking</button>
+
+          <form
+          action="/booking/<%= booking.id %>/cancel"
+          method="POST"
+          style="display:inline;"
+          onsubmit="return confirm('Are you sure you want to cancel this booking?');"
+          >
+          <button type="submit" class="btn-outline">Cancel Booking</button>
+          </form>
         </div>
-      </div>
+
 
       <div class="booking-extra">
         <h2>About Your Trip</h2>
         <p>
-          Your <%= booking.packageName %> adventure is confirmed! Get ready for an unforgettable experience in <%= booking.destination %>.
-          We’ll send you all the necessary travel details and updates before your departure.
+          Your <%= booking.packageName %> adventure is confirmed! Get ready for an unforgettable experience.
+          We'll send you all the necessary travel details and updates before your departure.
         </p>
       </div>
     </div>

@@ -27,7 +27,7 @@ app.use(express.urlencoded({ extended: true })); // Parse incoming request bodie
 app.use(express.static("public")); // Serve static files (e.g. CSS files)
 
 app.get("/", function (req, res) {
-  res.render("index", { page: "index" });
+  res.render("index", { page: "index", user: req.session.user || null });
 });
 
 app.get("/packages", async function (req, res) {
@@ -54,6 +54,7 @@ app.get("/packages", async function (req, res) {
       page: "packages",
       packages,
       themes,
+      user: req.session.user || null,
       selectedTheme: theme || "",
       searchQuery: q || "",
     });
@@ -120,6 +121,13 @@ app.post("/login", async (req, res) => {
       return res.send("Invalid email or password");
     }
 
+    if (req.session.user) {
+      req.session.destroy(() => {
+        // Recreate session for the new login
+        req.session = null;
+      });
+    }
+
     // Store user info in session
     req.session.user = {
       id: user.user_id,
@@ -141,13 +149,10 @@ app.get("/logout", (req, res) => {
   });
 });
 
-app.get("/destinations", function (req, res) {
-  res.render("destinations", { page: "destinations" });
-});
 
 app.get("/payment", async (req, res) => {
   try {
-    const { package_id, travelers } = req.query;
+    const { package_id, travelers, date } = req.query;
     if (!package_id || !travelers) {
       return res.redirect("/packages");
     }
@@ -186,7 +191,9 @@ app.get("/payment", async (req, res) => {
       transports: transportRows,
       totalPrice: discountedPrice.toFixed(2),
       discount: (discount * 100).toFixed(0),
+      date: date,
       page: "payment",
+      user: req.session.user || null
     });
   } catch (err) {
     console.error(err);
@@ -235,6 +242,7 @@ app.get("/package/:id", async function (req, res) {
       destinationList: destinationList,
       transports: transportRows,
       page: `package/${id}`,
+      user: req.session.user || null
     });
   } catch (err) {
     console.error("Error fetching package details:", err);
@@ -244,11 +252,11 @@ app.get("/package/:id", async function (req, res) {
 
 app.get("/profile", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.session.user.id; // make sure it's .id not .user_id
+    const userId = req.session.user.id;
     console.log("✅ /profile route hit");
     console.log("🔹 Session userId:", userId);
 
-    // Query user info
+    // Get user info
     const [userResults] = await db.query(
       "SELECT name, email FROM user WHERE user_id = ?",
       [userId]
@@ -264,52 +272,176 @@ app.get("/profile", isAuthenticated, async (req, res) => {
       avatar: "https://i.pravatar.cc/150", // placeholder
     };
 
-    // Query bookings
+    // Get all bookings for that user
     const [bookingResults] = await db.query(
       `SELECT 
         b.booking_id,
-        b.package_id,
-        b.travel_start_date AS date,
-        b.numtravelers AS people,
-        p.package_name AS packageName,
-        p.price AS totalPrice
+        b.booking_date,
+        b.travel_start_date,
+        b.numtravelers,
+        p.package_name,
+        p.price
       FROM booking b
       JOIN package p ON b.package_id = p.package_id
       WHERE b.user_id = ?`,
       [userId]
     );
 
+    // Convert and format data for EJS safely
     const bookings = bookingResults.map((b) => ({
-      packageId: b.package_id,
-      packageName: b.packageName,
-      date: b.date,
-      people: b.people,
-      totalPrice: b.totalPrice * b.people,
+      booking_id: b.booking_id,
+      package_name: b.package_name,
+      booking_date: b.booking_date
+        ? new Date(b.booking_date).toISOString().split("T")[0]
+        : "N/A",
+      travel_start_date: b.travel_start_date
+        ? new Date(b.travel_start_date).toISOString().split("T")[0]
+        : "N/A",
+      numtravelers: b.numtravelers,
+      total_price: b.price * b.numtravelers,
       image: "https://via.placeholder.com/300x200?text=Travel+Package",
     }));
 
-    res.render("profile", { user, bookings, page: "profile" });
+    // Render the profile page with user and bookings
+    res.render("profile", {
+      user,
+      bookings,
+      page: "profile",
+    });
   } catch (err) {
     console.error("❌ Error loading profile:", err);
+    res.status(500).render("500", { message: "Server error while loading profile." });
+  }
+});
+
+
+app.post("/process-payment", async (req, res) => {
+  try {
+
+    const userId = req.session.user.id;
+    if(!userId){
+      console.log("No user logged in");
+      res.redirect("/login");
+    }
+    
+    const { package_id, travelers, total, method, transport_id, travel_start_date } = req.body;
+
+    if (!package_id || !travelers || !total || !method || !transport_id || !travel_start_date) {
+      console.log("Missing booking or payment details");
+      return res.redirect("/");
+    }
+
+    // current date for booking and payment
+    const currentDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
+    // Insert into booking table
+    const [bookingResult] = await db.query(
+      `INSERT INTO booking (user_id, package_id, booking_date, travel_start_date, transport_id, numtravelers)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [userId, package_id, currentDate, travel_start_date, transport_id, travelers]
+    );
+
+    const bookingId = bookingResult.insertId;
+
+    // Insert into payment table
+    await db.query(
+      `INSERT INTO payment (booking_id, amount, payment_date, method)
+       VALUES (?, ?, ?, ?)`,
+      [bookingId, total, currentDate, method]
+    );
+
+    console.log("Booking and Payment successfully inserted!");
+    res.redirect("/profile");
+
+  } catch (err) {
+    console.error("Error processing payment:", err);
+    res.status(500).send("Error processing payment");
+  }
+});
+
+app.get("/booking/:id", isAuthenticated, async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.session.user.id;
+
+    // Fetch booking details joined with package and payment
+    const [results] = await db.query(
+      `SELECT 
+        b.booking_id,
+        b.booking_date,
+        b.travel_start_date,
+        b.numtravelers,
+        p.package_name,
+        p.price,
+        pay.method AS payment_method,
+        pay.amount AS payment_amount
+      FROM booking b
+      JOIN package p ON b.package_id = p.package_id
+      LEFT JOIN payment pay ON b.booking_id = pay.booking_id
+      WHERE b.booking_id = ? AND b.user_id = ?`,
+      [bookingId, userId]
+    );
+
+    if (results.length === 0) {
+      return res.status(404).render("404", { message: "Booking not found." });
+    }
+
+    const booking = results[0];
+
+    // Format the booking object for EJS
+    const bookingData = {
+      id: booking.booking_id,
+      packageName: booking.package_name,
+      date: booking.booking_date
+        ? new Date(booking.booking_date).toISOString().split("T")[0]
+        : "N/A",
+      travelDate: booking.travel_start_date
+        ? new Date(booking.travel_start_date).toISOString().split("T")[0]
+        : "N/A",
+      people: booking.numtravelers,
+      totalPrice: booking.payment_amount || booking.price * booking.numtravelers,
+      paymentMethod: booking.payment_method || "N/A",
+    };
+
+    // Render booking-details.ejs
+    res.render("booking-details", { booking: bookingData, page: "booking-details", user: req.session.user || null });
+  } catch (err) {
+    console.error("Error fetching booking details:", err);
+    res.status(500).render("500", { message: "Server error while loading booking details." });
+  }
+});
+
+app.post("/booking/:id/cancel", async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.redirect("/login");
+    }
+
+    const bookingId = req.params.id;
+    const userId = req.session.user.user_id; // or .id, depending on your session key
+
+    // Check that this booking belongs to the logged-in user
+    const [checkBooking] = await db.query(
+      "SELECT * FROM booking WHERE booking_id = ? AND user_id = ?",
+      [bookingId, userId]
+    );
+
+    if (checkBooking.length === 0) {
+      return res.status(403).send("Unauthorized action or booking not found");
+    }
+
+    // Delete booking
+    await db.query("DELETE FROM booking WHERE booking_id = ?", [bookingId]);
+
+    // Redirect to profile or show a confirmation
+    res.redirect("/profile");
+  } catch (err) {
+    console.error("Error canceling booking:", err);
     res.status(500).send("Server error");
   }
 });
 
 
-
-
-app.get("/booking/:id", (req, res) => {
-  const booking = {
-    id: 1,
-    packageName: "Santorini Escape",
-    destination: "Santorini, Greece",
-    date: "2025-12-15",
-    people: 2,
-    totalPrice: 2400,
-    status: "Paid",
-  };
-  res.render("booking-details", { booking, page: `booking/{$id}` });
-});
 
 app.get("/admin", (req, res) => {
   const packages = [
@@ -344,6 +476,8 @@ app.use(function (error, req, res, next) {
   console.log(error);
   res.status(500).render("500");
 });
+
+
 
 
 app.listen(3000);
