@@ -3,15 +3,17 @@ const path = require("path");
 const express = require("express");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
+const flash = require("connect-flash");
 
 const db = require("./database.js");
-const { isAuthenticated } = require('./middleware.js');
+const { isAuthenticated } = require("./middleware.js");
 const { imageMap } = require("./app-image-addon.js");
-
 
 //const blogRoutes = require('./routes/blog');
 
 const app = express();
+
+app.use(flash());
 
 app.use(
   session({
@@ -20,6 +22,12 @@ app.use(
     saveUninitialized: false,
   })
 );
+
+app.use((req, res, next) => {
+  res.locals.message = req.session.message || null;
+  delete req.session.message;
+  next();
+});
 
 // Activate EJS view engine
 app.set("view engine", "ejs");
@@ -32,27 +40,26 @@ app.get("/", async (req, res) => {
   try {
     const [topPackages] = await db.query("SELECT * FROM top_3_packages");
 
-    topPackages.forEach(p => {
-      p.image = imageMap[p.package_id] || "https://via.placeholder.com/300x200?text=Travel";
+    topPackages.forEach((p) => {
+      p.image =
+        imageMap[p.package_id] ||
+        "https://via.placeholder.com/300x200?text=Travel";
     });
 
     res.render("index", {
       page: "index",
       user: req.session.user || null,
-      topPackages
+      topPackages,
     });
   } catch (err) {
     console.error("Error loading homepage:", err);
     res.render("index", {
       page: "index",
       user: req.session.user || null,
-      topPackages: []
+      topPackages: [],
     });
   }
 });
-
-
-
 
 app.get("/packages", async function (req, res) {
   try {
@@ -77,13 +84,15 @@ app.get("/packages", async function (req, res) {
     const [packages] = await db.query(query, params);
 
     // ✅ Attach images
-    packages.forEach(p => {
-      p.image = imageMap[p.package_id] || "https://via.placeholder.com/300x200?text=Travel+Package";
+    packages.forEach((p) => {
+      p.image =
+        imageMap[p.package_id] ||
+        "https://via.placeholder.com/300x200?text=Travel+Package";
     });
 
     const [themes] = await db.query("SELECT DISTINCT theme FROM package");
 
-   res.render("packages", {
+    res.render("packages", {
       page: "packages",
       packages,
       themes,
@@ -97,7 +106,6 @@ app.get("/packages", async function (req, res) {
   }
 });
 
-
 app.get("/login", function (req, res) {
   res.render("login", { page: "login" });
 });
@@ -110,30 +118,38 @@ app.post("/register", async (req, res) => {
   const { name, email, password, confirmPassword } = req.body;
 
   if (password !== confirmPassword) {
-    return res.send("Passwords do not match!");
+    req.session.message = { type: "error", text: "Passwords do not match!" };
+    return res.redirect("/signup");
   }
 
   try {
-    const [existingUser] = await db
-      .query("SELECT * FROM user WHERE email = ?", [email]);
-
+    const [existingUser] = await db.query(
+      "SELECT * FROM user WHERE email = ?",
+      [email]
+    );
     if (existingUser.length > 0) {
-      return res.send("Email already registered!");
+      req.session.message = {
+        type: "error",
+        text: "Email already registered!",
+      };
+      return res.redirect("/signup");
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    await db.query(
+      "INSERT INTO user (name, email, password) VALUES (?, ?, ?)",
+      [name, email, hashedPassword]
+    );
 
-    await db
-      .query("INSERT INTO user (name, email, password) VALUES (?, ?, ?)", [
-        name,
-        email,
-        hashedPassword,
-      ]);
-
+    req.session.message = {
+      type: "success",
+      text: "Account created! Please login.",
+    };
     res.redirect("/login");
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error during registration");
+    req.session.message = { type: "error", text: "Registration failed." };
+    res.redirect("/signup");
   }
 });
 
@@ -141,18 +157,27 @@ app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const [rows] = await db
-      .query("SELECT * FROM user WHERE email = ?", [email]);
+    const [rows] = await db.query("SELECT * FROM user WHERE email = ?", [
+      email,
+    ]);
 
     if (rows.length === 0) {
-      return res.send("Invalid email or password");
+      req.session.message = {
+        type: "error",
+        text: "Invalid email or password.",
+      };
+      return res.redirect("/login");
     }
 
     const user = rows[0];
     const match = await bcrypt.compare(password, user.password);
 
     if (!match) {
-      return res.send("Invalid email or password");
+      req.session.message = {
+        type: "error",
+        text: "Invalid email or password.",
+      };
+      return res.redirect("/login");
     }
 
     if (req.session.user) {
@@ -172,7 +197,8 @@ app.post("/login", async (req, res) => {
     res.redirect("/"); // redirect to dashboard or homepage
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error during login");
+    req.session.message = { type: "error", text: "Something went wrong." };
+    res.redirect("/login");
   }
 });
 
@@ -182,7 +208,6 @@ app.post("/logout", (req, res) => {
     res.redirect("/");
   });
 });
-
 
 app.get("/payment", async (req, res) => {
   try {
@@ -227,7 +252,7 @@ app.get("/payment", async (req, res) => {
       discount: (discount * 100).toFixed(0),
       date: date,
       page: "payment",
-      user: req.session.user || null
+      user: req.session.user || null,
     });
   } catch (err) {
     console.error(err);
@@ -246,7 +271,9 @@ app.get("/package/:id", async function (req, res) {
     if (pkgRows.length === 0) return res.status(404).render("404");
 
     const pkg = pkgRows[0];
-    pkg.image = imageMap[pkg.package_id] || "https://via.placeholder.com/500x350?text=Travel+Package";
+    pkg.image =
+      imageMap[pkg.package_id] ||
+      "https://via.placeholder.com/500x350?text=Travel+Package";
 
     const [transportRows] = await db.query(
       `SELECT t.transport_id, t.mode, t.company, t.price
@@ -268,17 +295,16 @@ app.get("/package/:id", async function (req, res) {
     res.render("package-details", {
       package: pkg,
       destinations: destRows,
-      destinationList: destRows.map(d => d.name).join(", "),
+      destinationList: destRows.map((d) => d.name).join(", "),
       transports: transportRows,
       page: `package/${id}`,
-      user: req.session.user || null
+      user: req.session.user || null,
     });
   } catch (err) {
     console.error("Error fetching package details:", err);
     res.status(500).render("500");
   }
 });
-
 
 app.get("/profile", isAuthenticated, async (req, res) => {
   try {
@@ -293,7 +319,7 @@ app.get("/profile", isAuthenticated, async (req, res) => {
 
     const user = {
       name: userResults[0].name,
-      email: userResults[0].email
+      email: userResults[0].email,
     };
 
     const [bookingResults] = await db.query(
@@ -322,13 +348,20 @@ app.get("/profile", isAuthenticated, async (req, res) => {
         : "N/A",
       numtravelers: b.numtravelers,
       total_price: b.price * b.numtravelers,
-      image: imageMap[b.package_id] || "https://via.placeholder.com/300x200?text=Travel",
+      image:
+        imageMap[b.package_id] ||
+        "https://via.placeholder.com/300x200?text=Travel",
     }));
+
+    // ✅ Take flash message and clear it
+    const message = req.session.message || null;
+    req.session.message = null;
 
     res.render("profile", {
       user,
       bookings,
       page: "profile",
+      message,
     });
   } catch (err) {
     console.error("❌ Error loading profile:", err);
@@ -337,48 +370,77 @@ app.get("/profile", isAuthenticated, async (req, res) => {
 });
 
 
-
 app.post("/process-payment", async (req, res) => {
   try {
-
     const userId = req.session.user.id;
-    if(!userId){
-      console.log("No user logged in");
-      res.redirect("/login");
+    if (!userId) {
+      req.session.message = {
+        type: "error",
+        text: "Please log in to complete payment.",
+      };
+      return res.redirect("/login");
     }
-    
-    const { package_id, travelers, total, method, transport_id, travel_start_date } = req.body;
 
-    if (!package_id || !travelers || !total || !method || !transport_id || !travel_start_date) {
-      console.log("Missing booking or payment details");
+    const {
+      package_id,
+      travelers,
+      total,
+      method,
+      transport_id,
+      travel_start_date,
+    } = req.body;
+
+    if (
+      !package_id ||
+      !travelers ||
+      !total ||
+      !method ||
+      !transport_id ||
+      !travel_start_date
+    ) {
+      req.session.message = {
+        type: "error",
+        text: "Missing booking or payment details.",
+      };
       return res.redirect("/");
     }
 
-    // current date for booking and payment
-    const currentDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const currentDate = new Date().toISOString().split("T")[0];
 
-    // Insert into booking table
     const [bookingResult] = await db.query(
       `INSERT INTO booking (user_id, package_id, booking_date, travel_start_date, transport_id, numtravelers)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [userId, package_id, currentDate, travel_start_date, transport_id, travelers]
+      [
+        userId,
+        package_id,
+        currentDate,
+        travel_start_date,
+        transport_id,
+        travelers,
+      ]
     );
 
     const bookingId = bookingResult.insertId;
 
-    // Insert into payment table
     await db.query(
       `INSERT INTO payment (booking_id, amount, payment_date, method)
        VALUES (?, ?, ?, ?)`,
       [bookingId, total, currentDate, method]
     );
 
-    console.log("Booking and Payment successfully inserted!");
+    req.session.message = {
+      type: "success",
+      text: "Payment completed successfully!",
+    };
     res.redirect("/profile");
-
   } catch (err) {
-    console.error("Error processing payment:", err);
-    res.status(500).send("Error processing payment");
+    console.error(err);
+
+    return res.render("payment", {
+      page: "payment",
+      user: req.session.user || null,
+      message: { type: "error", text: "Payment failed. Please try again." },
+    });
   }
 });
 
@@ -422,47 +484,61 @@ app.get("/booking/:id", isAuthenticated, async (req, res) => {
         ? new Date(booking.travel_start_date).toISOString().split("T")[0]
         : "N/A",
       people: booking.numtravelers,
-      totalPrice: booking.payment_amount || booking.price * booking.numtravelers,
+      totalPrice:
+        booking.payment_amount || booking.price * booking.numtravelers,
       paymentMethod: booking.payment_method || "N/A",
     };
 
     // Render booking-details.ejs
-    res.render("booking-details", { booking: bookingData, page: "booking-details", user: req.session.user || null });
+    res.render("booking-details", {
+      booking: bookingData,
+      page: "booking-details",
+      user: req.session.user || null,
+    });
   } catch (err) {
     console.error("Error fetching booking details:", err);
-    res.status(500).render("500", { message: "Server error while loading booking details." });
+    res.status(500).render("500", {
+      message: "Server error while loading booking details.",
+    });
   }
 });
 
 app.post("/booking/:id/cancel", isAuthenticated, async (req, res) => {
   try {
     const bookingId = req.params.id;
-    // handle either session shape: .id (used at login) or .user_id (older)
-    const userId = (req.session.user && (req.session.user.id || req.session.user.user_id));
+    const userId =
+      req.session.user && (req.session.user.id || req.session.user.user_id);
     if (!userId) return res.redirect("/login");
 
-    // Check that this booking belongs to the logged-in user
     const [checkBooking] = await db.query(
       "SELECT * FROM booking WHERE booking_id = ? AND user_id = ?",
       [bookingId, userId]
     );
 
     if (checkBooking.length === 0) {
-      return res.status(403).send("Unauthorized action or booking not found");
+      req.session.message = {
+        type: "error",
+        text: "Unauthorized or booking not found.",
+      };
+      return res.redirect("/profile");
     }
 
-    // Delete booking
     await db.query("DELETE FROM booking WHERE booking_id = ?", [bookingId]);
 
-    // Redirect to profile or show a confirmation
+    req.session.message = {
+      type: "success",
+      text: "Booking canceled successfully.",
+    };
     res.redirect("/profile");
   } catch (err) {
     console.error("Error canceling booking:", err);
-    res.status(500).send("Server error");
+    req.session.message = {
+      type: "error",
+      text: "Server error while canceling booking.",
+    };
+    res.redirect("/profile");
   }
 });
-
-
 
 app.get("/admin", (req, res) => {
   const packages = [
@@ -488,22 +564,26 @@ app.get("/admin", (req, res) => {
       duration: "8 days",
     },
   ];
-  res.render("admin-dashboard", { packages, page: "admin", user: req.session.user || null });
+  res.render("admin-dashboard", {
+    packages,
+    page: "admin",
+    user: req.session.user || null,
+  });
 });
 
 // 404 Handler
 app.use((req, res) => {
-  res.status(404).render("404", {page: "404", user: req.session.user || null});
+  res
+    .status(404)
+    .render("404", { page: "404", user: req.session.user || null });
 });
 
 // 500 Error Handler
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).render("500", {page: "500", user: req.session.user || null});
+  res
+    .status(500)
+    .render("500", { page: "500", user: req.session.user || null });
 });
-
-
-
-
 
 app.listen(3000);
