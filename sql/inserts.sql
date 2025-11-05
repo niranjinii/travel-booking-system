@@ -307,7 +307,6 @@ TRUNCATE TABLE package_transport;
 TRUNCATE TABLE transport;
 SET FOREIGN_KEY_CHECKS = 1;
 
-TRUNCATE TABLE transport;
 
 INSERT INTO transport (transport_id, mode, company, price) VALUES
 (1, 'Train', 'IRCTC Express', 1800),
