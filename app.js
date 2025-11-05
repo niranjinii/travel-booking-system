@@ -411,14 +411,12 @@ app.get("/booking/:id", isAuthenticated, async (req, res) => {
   }
 });
 
-app.post("/booking/:id/cancel", async (req, res) => {
+app.post("/booking/:id/cancel", isAuthenticated, async (req, res) => {
   try {
-    if (!req.session.user) {
-      return res.redirect("/login");
-    }
-
     const bookingId = req.params.id;
-    const userId = req.session.user.user_id; // or .id, depending on your session key
+    // handle either session shape: .id (used at login) or .user_id (older)
+    const userId = (req.session.user && (req.session.user.id || req.session.user.user_id));
+    if (!userId) return res.redirect("/login");
 
     // Check that this booking belongs to the logged-in user
     const [checkBooking] = await db.query(
