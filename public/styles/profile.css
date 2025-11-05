@@ -95,7 +95,35 @@
   text-align: center;
   font-size: 1.2rem;
   opacity: 0.8;
-} /* --- Responsive --- */
+}
+
+.logout-form {
+  margin-left: auto;
+}
+
+.logout-btn {
+  background: transparent;
+  border: none;
+  color: #ff6b6b;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.logout-btn:hover {
+  color: #ff3b3b;
+}
+
+.logout-btn i {
+  font-size: 1.3rem;
+}
+
+
+/* --- Responsive --- */
 @media (max-width: 768px) {
   .profile-header {
     flex-direction: column;

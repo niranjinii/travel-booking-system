@@ -6,6 +6,8 @@ const session = require("express-session");
 
 const db = require("./database.js");
 const { isAuthenticated } = require('./middleware.js');
+const { imageMap } = require("./app-image-addon.js");
+
 
 //const blogRoutes = require('./routes/blog');
 
@@ -26,31 +28,62 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true })); // Parse incoming request bodies
 app.use(express.static("public")); // Serve static files (e.g. CSS files)
 
-app.get("/", function (req, res) {
-  res.render("index", { page: "index", user: req.session.user || null });
+app.get("/", async (req, res) => {
+  try {
+    const [topPackages] = await db.query("SELECT * FROM top_3_packages");
+
+    topPackages.forEach(p => {
+      p.image = imageMap[p.package_id] || "https://via.placeholder.com/300x200?text=Travel";
+    });
+
+    res.render("index", {
+      page: "index",
+      user: req.session.user || null,
+      topPackages
+    });
+  } catch (err) {
+    console.error("Error loading homepage:", err);
+    res.render("index", {
+      page: "index",
+      user: req.session.user || null,
+      topPackages: []
+    });
+  }
 });
+
+
+
 
 app.get("/packages", async function (req, res) {
   try {
     const { q, theme } = req.query;
+
     let query = `SELECT DISTINCT p.* FROM package p
-                 LEFT JOIN Package_Destination pd ON p.package_id = pd.package_id
-                 LEFT JOIN Destination d ON pd.destination_id = d.destination_id
+                 LEFT JOIN package_destination pd ON p.package_id = pd.package_id
+                 LEFT JOIN destination d ON pd.destination_id = d.destination_id
                  WHERE 1`;
     const params = [];
+
     if (theme && theme.trim() !== "") {
       query += ` AND p.theme = ?`;
       params.push(theme);
     }
     if (q && q.trim() !== "") {
-      query += ` AND (p.package_name LIKE ? OR p.description LIKE ? OR d.name LIKE ?)`;
       const pattern = `%${q}%`;
+      query += ` AND (p.package_name LIKE ? OR p.description LIKE ? OR d.name LIKE ?)`;
       params.push(pattern, pattern, pattern);
     }
 
     const [packages] = await db.query(query, params);
+
+    // ✅ Attach images
+    packages.forEach(p => {
+      p.image = imageMap[p.package_id] || "https://via.placeholder.com/300x200?text=Travel+Package";
+    });
+
     const [themes] = await db.query("SELECT DISTINCT theme FROM package");
-    res.render("packages", {
+
+   res.render("packages", {
       page: "packages",
       packages,
       themes,
@@ -60,9 +93,10 @@ app.get("/packages", async function (req, res) {
     });
   } catch (err) {
     console.error("Error fetching packages:", err);
-    res.status(500).send("Internal Server Error");
+    res.status(500).render("500");
   }
 });
+
 
 app.get("/login", function (req, res) {
   res.render("login", { page: "login" });
@@ -142,10 +176,10 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/logout", (req, res) => {
+app.post("/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) console.error(err);
-    res.redirect("/login");
+    res.redirect("/");
   });
 });
 
@@ -204,26 +238,24 @@ app.get("/payment", async (req, res) => {
 app.get("/package/:id", async function (req, res) {
   try {
     const id = req.params.id;
-    // Fetch package details
+
     const [pkgRows] = await db.query(
       "SELECT * FROM package WHERE package_id = ?",
       [id]
     );
-    if (pkgRows.length === 0) {
-      return res.status(404).send("Package not found");
-    }
+    if (pkgRows.length === 0) return res.status(404).render("404");
 
     const pkg = pkgRows[0];
+    pkg.image = imageMap[pkg.package_id] || "https://via.placeholder.com/500x350?text=Travel+Package";
 
     const [transportRows] = await db.query(
-      `SELECT t.mode, t.company, t.price
-      FROM package_transport pt
-      JOIN transport t ON pt.transport_id = t.transport_id
-      WHERE pt.package_id = ?`,
+      `SELECT t.transport_id, t.mode, t.company, t.price
+       FROM package_transport pt
+       JOIN transport t ON pt.transport_id = t.transport_id
+       WHERE pt.package_id = ?`,
       [id]
     );
 
-    // Fetch destinations for the package (ordered by sequence_no)
     const [destRows] = await db.query(
       `SELECT d.name, d.location, pd.sequence_no
        FROM package_destination pd
@@ -233,52 +265,44 @@ app.get("/package/:id", async function (req, res) {
       [id]
     );
 
-    const destinationList = destRows.map((d) => d.name).join(", ");
-
-    // Render page with both package and its destinations
     res.render("package-details", {
       package: pkg,
       destinations: destRows,
-      destinationList: destinationList,
+      destinationList: destRows.map(d => d.name).join(", "),
       transports: transportRows,
       page: `package/${id}`,
       user: req.session.user || null
     });
   } catch (err) {
     console.error("Error fetching package details:", err);
-    res.status(500).send("Internal Server Error");
+    res.status(500).render("500");
   }
 });
+
 
 app.get("/profile", isAuthenticated, async (req, res) => {
   try {
     const userId = req.session.user.id;
-    console.log("✅ /profile route hit");
-    console.log("🔹 Session userId:", userId);
 
-    // Get user info
     const [userResults] = await db.query(
       "SELECT name, email FROM user WHERE user_id = ?",
       [userId]
     );
 
-    if (userResults.length === 0) {
-      return res.redirect("/login");
-    }
+    if (userResults.length === 0) return res.redirect("/login");
 
     const user = {
       name: userResults[0].name,
-      email: userResults[0].email,
-      avatar: "https://i.pravatar.cc/150", // placeholder
+      email: userResults[0].email
     };
 
-    // Get all bookings for that user
     const [bookingResults] = await db.query(
       `SELECT 
         b.booking_id,
         b.booking_date,
         b.travel_start_date,
         b.numtravelers,
+        p.package_id,
         p.package_name,
         p.price
       FROM booking b
@@ -287,7 +311,6 @@ app.get("/profile", isAuthenticated, async (req, res) => {
       [userId]
     );
 
-    // Convert and format data for EJS safely
     const bookings = bookingResults.map((b) => ({
       booking_id: b.booking_id,
       package_name: b.package_name,
@@ -299,10 +322,9 @@ app.get("/profile", isAuthenticated, async (req, res) => {
         : "N/A",
       numtravelers: b.numtravelers,
       total_price: b.price * b.numtravelers,
-      image: "https://via.placeholder.com/300x200?text=Travel+Package",
+      image: imageMap[b.package_id] || "https://via.placeholder.com/300x200?text=Travel",
     }));
 
-    // Render the profile page with user and bookings
     res.render("profile", {
       user,
       bookings,
@@ -310,9 +332,10 @@ app.get("/profile", isAuthenticated, async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Error loading profile:", err);
-    res.status(500).render("500", { message: "Server error while loading profile." });
+    res.status(500).render("500");
   }
 });
+
 
 
 app.post("/process-payment", async (req, res) => {
@@ -465,15 +488,20 @@ app.get("/admin", (req, res) => {
       duration: "8 days",
     },
   ];
-  res.render("admin-dashboard", { packages, page: "admin" });
+  res.render("admin-dashboard", { packages, page: "admin", user: req.session.user || null });
 });
 
-app.use(function (error, req, res, next) {
-  // Default error handling function
-  // Will become active whenever any route / middleware crashes
-  console.log(error);
-  res.status(500).render("500");
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).render("404", {page: "404", user: req.session.user || null});
 });
+
+// 500 Error Handler
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).render("500", {page: "500", user: req.session.user || null});
+});
+
 
 
 

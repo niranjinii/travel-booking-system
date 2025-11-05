@@ -75,7 +75,7 @@
           <div class="package-card shadow-sm">
             <div class="package-image-container">
               <img
-                src="/images/carousel1.jpg"
+                src="<%= pkg.image %>"
                 alt="<%= pkg.package_name %>"
                 class="package-image"
               />
@@ -92,7 +92,7 @@
                 <span class="package-price">Rs.<%= pkg.price %>/person</span>
               </div>
 
-              <a href="#" class="book-btn">Book Tour</a>
+              <a href="/package/<%= pkg.package_id %>" class="book-btn">Book Tour</a>
             </div>
           </div>
           <% }); %>
