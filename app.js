@@ -258,12 +258,14 @@ app.get("/payment", async (req, res) => {
     let basePrice = packageData.price * travelers;
 
     // --- Apply group discounts ---
-    let discount = 0;
-    if (travelers >= 4) discount = 0.15;
-    else if (travelers === 3) discount = 0.1;
-    else if (travelers === 2) discount = 0.05;
-
+    const [[{ discount }]] = await db.query("SELECT calculate_discount(?) AS discount", [travelers]);
     const discountedPrice = basePrice * (1 - discount);
+
+    const [[{ totalPrice }]] = await db.query(
+    "SELECT calculate_total_price(?, ?, ?) AS totalPrice",
+    [packageData.price, travelers, discount]
+    );
+
 
     res.render("payment", {
       package: packageData,
@@ -343,20 +345,8 @@ app.get("/profile", isAuthenticated, async (req, res) => {
       email: userResults[0].email,
     };
 
-    const [bookingResults] = await db.query(
-      `SELECT 
-        b.booking_id,
-        b.booking_date,
-        b.travel_start_date,
-        b.numtravelers,
-        p.package_id,
-        p.package_name,
-        p.price
-      FROM booking b
-      JOIN package p ON b.package_id = p.package_id
-      WHERE b.user_id = ?`,
-      [userId]
-    );
+    const [bookingResults] = await db.query("SELECT * FROM user_bookings_view WHERE user_id = ?", [userId]);
+
 
     const bookings = bookingResults.map((b) => ({
       booking_id: b.booking_id,
@@ -427,26 +417,12 @@ app.post("/process-payment", async (req, res) => {
 
     const currentDate = new Date().toISOString().split("T")[0];
 
-    const [bookingResult] = await db.query(
-      `INSERT INTO booking (user_id, package_id, booking_date, travel_start_date, transport_id, numtravelers)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        userId,
-        package_id,
-        currentDate,
-        travel_start_date,
-        transport_id,
-        travelers,
-      ]
-    );
+    await db.query("CALL create_booking_and_payment(?, ?, ?, ?, ?, ?, ?, ?)", [
+    userId, package_id, currentDate, travel_start_date, transport_id, travelers, total, method
+    ]);
+    
+    
 
-    const bookingId = bookingResult.insertId;
-
-    await db.query(
-      `INSERT INTO payment (booking_id, amount, payment_date, method)
-       VALUES (?, ?, ?, ?)`,
-      [bookingId, total, currentDate, method]
-    );
 
     req.session.message = {
       type: "success",
@@ -542,7 +518,7 @@ app.post("/booking/:id/cancel", isAuthenticated, async (req, res) => {
       return res.redirect("/profile");
     }
 
-    await db.query("DELETE FROM booking WHERE booking_id = ?", [bookingId]);
+    await db.query("CALL cancel_booking(?, ?)", [bookingId, userId]);
 
     req.session.message = {
       type: "success",

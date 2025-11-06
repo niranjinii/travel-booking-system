@@ -8,3 +8,82 @@ LEFT JOIN booking b ON p.package_id = b.package_id
 GROUP BY p.package_id, p.package_name
 ORDER BY bookings_count DESC
 LIMIT 3;
+
+DELIMITER //
+CREATE FUNCTION calculate_discount(travelers INT)
+RETURNS DECIMAL(5,2)
+DETERMINISTIC
+BEGIN
+    DECLARE discount DECIMAL(5,2) DEFAULT 0.00;
+    IF travelers >= 4 THEN
+        SET discount = 0.15;
+    ELSEIF travelers = 3 THEN
+        SET discount = 0.10;
+    ELSEIF travelers = 2 THEN
+        SET discount = 0.05;
+    END IF;
+    RETURN discount;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE create_booking_and_payment (
+    IN p_user_id INT,
+    IN p_package_id INT,
+    IN p_booking_date DATE,
+    IN p_travel_start_date DATE,
+    IN p_transport_id INT,
+    IN p_numtravelers INT,
+    IN p_amount DECIMAL(10,2),
+    IN p_method VARCHAR(50)
+)
+BEGIN
+    DECLARE new_booking_id INT;
+
+    INSERT INTO booking (user_id, package_id, booking_date, travel_start_date, transport_id, numtravelers)
+    VALUES (p_user_id, p_package_id, p_booking_date, p_travel_start_date, p_transport_id, p_numtravelers);
+
+    SET new_booking_id = LAST_INSERT_ID();
+
+    INSERT INTO payment (booking_id, amount, payment_date, method)
+    VALUES (new_booking_id, p_amount, p_booking_date, p_method);
+END //
+DELIMITER ;
+
+CREATE OR REPLACE VIEW user_bookings_view AS
+SELECT 
+    b.booking_id,
+    b.user_id,
+    b.package_id,
+    b.booking_date,
+    b.travel_start_date,
+    b.numtravelers,
+    p.package_name,
+    p.price
+FROM booking b
+JOIN package p ON b.package_id = p.package_id;
+
+DELIMITER //
+CREATE FUNCTION calculate_total_price(base_price DECIMAL(10,2), travelers INT, discount DECIMAL(5,2))
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+    DECLARE total DECIMAL(10,2);
+    SET total = (base_price * travelers) * (1 - discount);
+    RETURN total;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE cancel_booking(IN p_booking_id INT, IN p_user_id INT)
+BEGIN
+    DECLARE count_booking INT;
+    SELECT COUNT(*) INTO count_booking
+    FROM booking
+    WHERE booking_id = p_booking_id AND user_id = p_user_id;
+
+    IF count_booking > 0 THEN
+        DELETE FROM booking WHERE booking_id = p_booking_id;
+    END IF;
+END //
+DELIMITER ;
