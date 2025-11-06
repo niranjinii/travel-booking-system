@@ -99,3 +99,67 @@ BEGIN
     END IF;
 END //
 DELIMITER ;
+
+DELIMITER //
+
+CREATE TRIGGER prevent_overlapping_bookings
+BEFORE INSERT ON booking
+FOR EACH ROW
+BEGIN
+    DECLARE pkg_duration INT;
+    DECLARE new_start DATE;
+    DECLARE new_end DATE;
+
+    -- Get the package duration_days from your schema
+    SELECT duration_days INTO pkg_duration
+    FROM package
+    WHERE package_id = NEW.package_id;
+
+    SET new_start = NEW.travel_start_date;
+    SET new_end = DATE_ADD(new_start, INTERVAL pkg_duration - 1 DAY);
+
+    -- Check for any overlapping bookings for the same user
+    IF EXISTS (
+        SELECT 1
+        FROM booking b
+        JOIN package p ON b.package_id = p.package_id
+        WHERE b.user_id = NEW.user_id
+          AND (
+              (NEW.travel_start_date BETWEEN b.travel_start_date AND DATE_ADD(b.travel_start_date, INTERVAL p.duration_days - 1 DAY))
+           OR (new_end BETWEEN b.travel_start_date AND DATE_ADD(b.travel_start_date, INTERVAL p.duration_days - 1 DAY))
+           OR (b.travel_start_date BETWEEN new_start AND new_end)
+          )
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'You already have a booking that overlaps these dates.';
+    END IF;
+END;
+//
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE PROCEDURE update_user_profile(
+    IN p_user_id INT,
+    IN p_name VARCHAR(255),
+    IN p_email VARCHAR(255),
+    IN p_phone VARCHAR(20)
+)
+BEGIN
+    -- Optional: check if the email is already used by another user
+    IF EXISTS (SELECT 1 FROM users WHERE email = p_email AND id <> p_user_id) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Email is already in use by another account.';
+    ELSE
+        UPDATE users
+        SET name = p_name,
+            email = p_email,
+            phone = p_phone
+        WHERE id = p_user_id;
+    END IF;
+END //
+
+DELIMITER ;
+
+

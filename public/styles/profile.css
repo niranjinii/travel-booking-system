@@ -122,19 +122,42 @@
   font-size: 1.3rem;
 }
 
+/* Edit form container below profile-info */
+    .edit-profile-container {
+      max-width: 500px;
+      margin-top: 1.5rem;
+      display: none;
+    }
 
-/* --- Responsive --- */
-@media (max-width: 768px) {
-  .profile-header {
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: center;
-  }
-  .profile-avatar {
-    margin-top: 1.5rem;
-  }
-  .profile-avatar img {
-    width: 80px;
-    height: 80px;
-  }
-}
+    .edit-profile-form {
+      background: rgba(0,0,0,0.2);
+      padding: 1.2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+    }
+
+    .edit-profile-form input {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid #ccc;
+    }
+
+    .edit-profile-form input::placeholder {
+      color: #ddd;
+    }
+
+    .edit-profile-form h5 {
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .edit-profile-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Make edit button small and inline */
+    #editProfileBtn {
+      margin-top: 0.5rem;
+    }

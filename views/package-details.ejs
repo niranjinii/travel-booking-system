@@ -31,8 +31,8 @@
     <div class="package-details-wrapper">
       <div
         class="package-hero"
-        style="background-image: url('<%= package.image %>')">
-
+        style="background-image: url('<%= package.image %>')"
+      >
         <div class="hero-overlay-dark"></div>
 
         <div class="hero-layout-container">
@@ -40,7 +40,14 @@
             <h2>Book This Trip</h2>
             <form action="/payment" method="GET" class="booking-form">
               <label for="date">Select Date</label>
-              <input type="date" id="date" name="date" required />
+              <input
+                type="date"
+                id="date"
+                name="date"
+                required
+                min="<%= new Date(new Date().getTime() + 7*24*60*60*1000).toISOString().split('T')[0] %>"
+                value="<%= date || '' %>"
+              />
 
               <label for="people">Number of Travelers</label>
               <input

@@ -110,7 +110,6 @@ app.get("/login", function (req, res) {
   res.render("login", { page: "login", user: req.session.user || null });
 });
 
-
 app.get("/signup", function (req, res) {
   res.render("register", { page: "register", user: req.session.user || null });
 });
@@ -257,25 +256,31 @@ app.get("/payment", async (req, res) => {
       [package_id]
     );
 
-    // Base package cost for all travelers
-    //const baseTotal = packageData.price * travelers;
-
     // Apply group discount
     const [[{ discount }]] = await db.query(
       "SELECT calculate_discount(?) AS discount",
       [travelers]
     );
 
-    // Store raw values for front-end calculation
+    // Calculate min date for travel (7 days from today)
+    const minDateObj = new Date();
+    minDateObj.setDate(minDateObj.getDate() + 7);
+    const minDate = minDateObj.toISOString().split("T")[0];
+
     res.render("payment", {
       package: packageData,
       travelers,
       transports: transportRows,
       discount: (discount * 100).toFixed(0),
       date: date,
+      minDate, // pass minDate
       page: "payment",
       user: req.session.user || null,
+      message: req.session.message || null, // flash message
     });
+
+    // Clear flash message
+    req.session.message = null;
   } catch (err) {
     console.error(err);
     req.session.message = {
@@ -325,6 +330,7 @@ app.get("/package/:id", async function (req, res) {
       transports: transportRows,
       page: `package/${id}`,
       user: req.session.user || null,
+      date: req.query.date || '',
     });
   } catch (err) {
     console.error("Error fetching package details:", err);
@@ -395,7 +401,7 @@ app.post("/process-payment", isAuthenticated, async (req, res) => {
         type: "error",
         text: "Please login to continue.",
       };
-      return (res.redirect("/login"));
+      return res.redirect("/login");
     }
 
     const { package_id, travelers, method, transport_id, travel_start_date } =
@@ -443,6 +449,18 @@ app.post("/process-payment", isAuthenticated, async (req, res) => {
       return res.redirect("back");
     }
 
+    const travelDate = new Date(travel_start_date);
+    const minAllowed = new Date();
+    minAllowed.setDate(minAllowed.getDate() + 7);
+
+    if (travelDate < minAllowed) {
+      req.session.message = {
+        type: "error",
+        text: "Travel date must be at least 7 days from today.",
+      };
+      return res.redirect(`/package/${package_id}`);
+    }
+
     const [[{ price: basePrice }]] = await db.query(
       "SELECT price FROM package WHERE package_id = ?",
       [package_id]
@@ -481,11 +499,25 @@ app.post("/process-payment", isAuthenticated, async (req, res) => {
     return res.redirect("/profile");
   } catch (err) {
     console.error(err);
-    req.session.message = {
-      type: "error",
-      text: "Payment failed. Please try again.",
-    };
-    return res.redirect("/packages");
+
+    const redirectUrl = `/package/${req.body.package_id}`;
+
+    // Check if the error comes from our trigger (overlapping booking)
+    if (err.sqlState === "45000") {
+      req.session.message = {
+        type: "error",
+        text:
+          err.sqlMessage ||
+          "You already have a booking that overlaps these dates.",
+      };
+    } else {
+      req.session.message = {
+        type: "error",
+        text: "Payment failed. Please try again.",
+      };
+    }
+
+    return res.redirect(redirectUrl);
   }
 });
 
@@ -585,36 +617,41 @@ app.post("/booking/:id/cancel", isAuthenticated, async (req, res) => {
   }
 });
 
-app.get("/admin", (req, res) => {
-  const packages = [
-    {
-      id: 1,
-      name: "Santorini Escape",
-      location: "Greece",
-      price: 1200,
-      duration: "5 days",
-    },
-    {
-      id: 2,
-      name: "Bali Adventure",
-      location: "Indonesia",
-      price: 950,
-      duration: "6 days",
-    },
-    {
-      id: 3,
-      name: "Swiss Alps Tour",
-      location: "Switzerland",
-      price: 1800,
-      duration: "8 days",
-    },
-  ];
-  res.render("admin-dashboard", {
-    packages,
-    page: "admin",
-    user: req.session.user || null,
-  });
+app.post("/update-profile", isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const { name, email, phone } = req.body;
+
+    await db.query("CALL update_user_profile(?, ?, ?, ?)", [
+      userId,
+      name,
+      email,
+      phone,
+    ]);
+
+    // Update session info so page reflects new details immediately
+    req.session.user.name = name;
+    req.session.user.email = email;
+    req.session.user.phone = phone;
+
+    req.session.message = {
+      type: "success",
+      text: "Profile updated successfully!",
+    };
+    res.redirect("/profile");
+  } catch (err) {
+    console.error(err);
+
+    req.session.message = {
+      type: "error",
+      text:
+        err.sqlMessage ||
+        "Could not update profile. Please try again.",
+    };
+    res.redirect("/profile");
+  }
 });
+
 
 // 404 Handler
 app.use((req, res) => {
