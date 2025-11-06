@@ -115,10 +115,29 @@ app.get("/signup", function (req, res) {
 });
 
 app.post("/register", async (req, res) => {
-  const { name, email, password, confirmPassword } = req.body;
+  const { name, email, phone, password, confirmPassword } = req.body;
 
+  // Confirm Password Match
   if (password !== confirmPassword) {
     req.session.message = { type: "error", text: "Passwords do not match!" };
+    return res.redirect("/signup");
+  }
+
+  // Phone number validation (must be 10 digits)
+  if (!/^[0-9]{10}$/.test(phone)) {
+    req.session.message = {
+      type: "error",
+      text: "Phone number must be 10 digits.",
+    };
+    return res.redirect("/signup");
+  }
+
+  // Password validation: ≥8 chars + at least 1 uppercase
+  if (password.length < 8 || !/[A-Z]/.test(password)) {
+    req.session.message = {
+      type: "error",
+      text: "Password must be at least 8 characters and contain one uppercase letter.",
+    };
     return res.redirect("/signup");
   }
 
@@ -127,6 +146,7 @@ app.post("/register", async (req, res) => {
       "SELECT * FROM user WHERE email = ?",
       [email]
     );
+
     if (existingUser.length > 0) {
       req.session.message = {
         type: "error",
@@ -136,9 +156,10 @@ app.post("/register", async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     await db.query(
-      "INSERT INTO user (name, email, password) VALUES (?, ?, ?)",
-      [name, email, hashedPassword]
+      "INSERT INTO user (name, email, password, phone) VALUES (?, ?, ?, ?)",
+      [name, email, hashedPassword, phone]
     );
 
     req.session.message = {
@@ -369,17 +390,16 @@ app.get("/profile", isAuthenticated, async (req, res) => {
   }
 });
 
-
 app.post("/process-payment", async (req, res) => {
   try {
-    const userId = req.session.user.id;
-    if (!userId) {
+    if (!req.session.user) {
       req.session.message = {
         type: "error",
         text: "Please log in to complete payment.",
       };
       return res.redirect("/login");
     }
+    const userId = req.session.user.user_id || req.session.user.id;
 
     const {
       package_id,
@@ -435,12 +455,11 @@ app.post("/process-payment", async (req, res) => {
     res.redirect("/profile");
   } catch (err) {
     console.error(err);
-
-    return res.render("payment", {
-      page: "payment",
-      user: req.session.user || null,
-      message: { type: "error", text: "Payment failed. Please try again." },
-    });
+    req.session.message = {
+      type: "error",
+      text: "Payment failed. Please try again.",
+    };
+    return res.redirect("/packages"); // Sends user back to payment page safely
   }
 });
 
