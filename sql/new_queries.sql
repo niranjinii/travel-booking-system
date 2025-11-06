@@ -147,19 +147,20 @@ CREATE PROCEDURE update_user_profile(
     IN p_phone VARCHAR(20)
 )
 BEGIN
-    -- Optional: check if the email is already used by another user
-    IF EXISTS (SELECT 1 FROM users WHERE email = p_email AND id <> p_user_id) THEN
+    -- Check if the new email belongs to another user
+    IF EXISTS (
+        SELECT 1 FROM user 
+        WHERE email = p_email AND user_id <> p_user_id
+    ) THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Email is already in use by another account.';
     ELSE
-        UPDATE users
+        UPDATE user
         SET name = p_name,
             email = p_email,
             phone = p_phone
-        WHERE id = p_user_id;
+        WHERE user_id = p_user_id;
     END IF;
 END //
 
 DELIMITER ;
-
-

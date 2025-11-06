@@ -122,42 +122,124 @@
   font-size: 1.3rem;
 }
 
+.update-profile-section {
+  margin: 40px auto;
+  max-width: 520px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 28px;
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+
+.update-profile-section h2 {
+  margin-bottom: 18px;
+  font-size: 24px;
+}
+
+.update-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.update-profile-form input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none !important;
+  outline: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 15px;
+}
+
+.update-profile-form input:focus {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.save-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  font-size: 17px;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+.save-btn:hover {
+  background: #43a047;
+}
+
 /* Edit form container below profile-info */
-    .edit-profile-container {
-      max-width: 500px;
-      margin-top: 1.5rem;
-      display: none;
-    }
+.edit-profile-container {
+  width: 100%;
+  max-width: 900px; /* adjust if needed */
+  margin-top: 1.5rem;
+  display: none;
+}
 
-    .edit-profile-form {
-      background: rgba(0,0,0,0.2);
-      padding: 1.2rem;
-      border-radius: 12px;
-      box-shadow: 0 8px 15px rgba(0,0,0,0.2);
-    }
+.edit-profile-form {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1.2rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
 
-    .edit-profile-form input {
-      background: rgba(255,255,255,0.1);
-      color: #fff;
-      border: 1px solid #ccc;
-    }
+.edit-profile-form input {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid #ccc;
+}
 
-    .edit-profile-form input::placeholder {
-      color: #ddd;
-    }
+.edit-profile-form input::placeholder {
+  color: #ddd;
+}
 
-    .edit-profile-form h5 {
-      color: #fff;
-      margin-bottom: 1rem;
-    }
+.edit-profile-form h5 {
+  color: #fff;
+  margin-bottom: 1rem;
+}
 
-    .edit-profile-buttons {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
+.edit-profile-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
 
-    /* Make edit button small and inline */
-    #editProfileBtn {
-      margin-top: 0.5rem;
-    }
+/* Make edit button small and inline */
+#editProfileBtn {
+  margin-top: 0.5rem;
+}
+
+.cancel-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  font-size: 17px;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+.cancel-btn:hover {
+  background: #ff3b3b;
+}
+
+.edit-profile-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}

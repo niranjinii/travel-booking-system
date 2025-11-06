@@ -330,7 +330,7 @@ app.get("/package/:id", async function (req, res) {
       transports: transportRows,
       page: `package/${id}`,
       user: req.session.user || null,
-      date: req.query.date || '',
+      date: req.query.date || "",
     });
   } catch (err) {
     console.error("Error fetching package details:", err);
@@ -343,7 +343,7 @@ app.get("/profile", isAuthenticated, async (req, res) => {
     const userId = req.session.user.id;
 
     const [userResults] = await db.query(
-      "SELECT name, email FROM user WHERE user_id = ?",
+      "SELECT name, email, phone FROM user WHERE user_id = ?",
       [userId]
     );
 
@@ -352,6 +352,7 @@ app.get("/profile", isAuthenticated, async (req, res) => {
     const user = {
       name: userResults[0].name,
       email: userResults[0].email,
+      phone: userResults[0].phone,
     };
 
     const [bookingResults] = await db.query(
@@ -375,15 +376,10 @@ app.get("/profile", isAuthenticated, async (req, res) => {
         "https://via.placeholder.com/300x200?text=Travel",
     }));
 
-    // ✅ Take flash message and clear it
-    const message = req.session.message || null;
-    req.session.message = null;
-
     res.render("profile", {
       user,
       bookings,
       page: "profile",
-      message,
     });
   } catch (err) {
     console.error("❌ Error loading profile:", err);
@@ -618,18 +614,18 @@ app.post("/booking/:id/cancel", isAuthenticated, async (req, res) => {
 });
 
 app.post("/update-profile", isAuthenticated, async (req, res) => {
-  try {
-    const userId = req.session.user.id;
-    const { name, email, phone } = req.body;
+  const { name, email, phone } = req.body;
+  const userId = req.session.user.id;
 
+  try {
     await db.query("CALL update_user_profile(?, ?, ?, ?)", [
       userId,
       name,
       email,
-      phone,
+      phone || null,
     ]);
 
-    // Update session info so page reflects new details immediately
+    // ✅ Update session data
     req.session.user.name = name;
     req.session.user.email = email;
     req.session.user.phone = phone;
@@ -638,20 +634,17 @@ app.post("/update-profile", isAuthenticated, async (req, res) => {
       type: "success",
       text: "Profile updated successfully!",
     };
-    res.redirect("/profile");
   } catch (err) {
-    console.error(err);
+    console.log("Update error:", err);
 
     req.session.message = {
       type: "error",
-      text:
-        err.sqlMessage ||
-        "Could not update profile. Please try again.",
+      text: "Could not update profile. Try again.",
     };
-    res.redirect("/profile");
+
+    return res.redirect("/profile");
   }
 });
-
 
 // 404 Handler
 app.use((req, res) => {
