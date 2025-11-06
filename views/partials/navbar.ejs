@@ -1,47 +1,58 @@
 <nav class="navbar">
   <div class="logotype">LOGOTYPE</div>
+
   <ul class="nav-links">
     <li><a href="/">HOME</a></li>
     <li><a href="/packages">PACKAGES</a></li>
     <li><a href="#">ABOUT US</a></li>
   </ul>
-  <% if (page !== 'login' && page !== 'register') { %> <% if (user) { %>
-  <!-- Show PROFILE if logged in -->
-  <a href="/profile" class="log-in-btn">PROFILE</a>
-  <% } else { %>
-  <!-- Show LOG IN if not logged in -->
-  <a href="/login" class="log-in-btn">LOG IN</a>
-  <% } %> <% } %>
+
+  <% /* Login/Profile button area: hidden only on login/register pages */ %>
+  <% if (typeof page === 'undefined' || (page !== 'login' && page !== 'register')) { %>
+    <% if (user) { %>
+      <a href="/profile" class="log-in-btn">PROFILE</a>
+    <% } else { %>
+      <a href="/login" class="log-in-btn">LOG IN</a>
+    <% } %>
+  <% } %>
 </nav>
-<% if (message) { %>
-<div class="popup <%= message.type %>"><%= message.text %></div>
 
-<script>
-  setTimeout(() => {
-    document.querySelector(".popup").style.opacity = "0";
-  }, 3000);
-</script>
+<% /* Always show flash popup if message exists. keep this OUTSIDE the above if-block */ %>
+<% if (typeof message !== 'undefined' && message) { %>
+  <div class="popup <%= message.type %>"><%= message.text %></div>
 
-<style>
-  .popup {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%); /* centers horizontally */
-    padding: 14px 20px;
-    border-radius: 6px;
-    color: white;
-    font-family: "Montserrat", sans-serif;
-    transition: opacity 0.5s ease;
-    z-index: 9999;
-    text-align: center;
-    min-width: 250px;
-  }
-  .popup.error {
-    background: #c0392b;
-  }
-  .popup.success {
-    background: #27ae60;
-  }
-</style>
+  <script>
+    (function () {
+      const popup = document.querySelector('.popup');
+      if (!popup) return;
+      setTimeout(() => {
+        popup.style.opacity = '0';
+      }, 3000);
+
+      // optional: remove element after fade
+      setTimeout(() => {
+        if (popup && popup.parentNode) popup.parentNode.removeChild(popup);
+      }, 3600);
+    })();
+  </script>
+
+  <style>
+    .popup {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 14px 20px;
+      border-radius: 6px;
+      color: white;
+      font-family: "Montserrat", sans-serif;
+      transition: opacity 0.5s ease;
+      z-index: 9999;
+      text-align: center;
+      min-width: 250px;
+      opacity: 1;
+    }
+    .popup.error { background: #c0392b; }
+    .popup.success { background: #27ae60; }
+  </style>
 <% } %>

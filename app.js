@@ -107,11 +107,12 @@ app.get("/packages", async function (req, res) {
 });
 
 app.get("/login", function (req, res) {
-  res.render("login", { page: "login" });
+  res.render("login", { page: "login", user: req.session.user || null });
 });
 
+
 app.get("/signup", function (req, res) {
-  res.render("register", { page: "register" });
+  res.render("register", { page: "register", user: req.session.user || null });
 });
 
 app.post("/register", async (req, res) => {
@@ -236,6 +237,7 @@ app.get("/payment", async (req, res) => {
     if (!package_id || !travelers) {
       return res.redirect("/packages");
     }
+
     // Fetch package details
     const [packageRows] = await db.query(
       `SELECT * FROM package WHERE package_id = ?`,
@@ -246,7 +248,7 @@ app.get("/payment", async (req, res) => {
     }
     const packageData = packageRows[0];
 
-    // Fetch transport options for this package
+    // Fetch transport options
     const [transportRows] = await db.query(
       `SELECT t.transport_id, t.mode, t.company, t.price
        FROM package_transport pt
@@ -254,24 +256,21 @@ app.get("/payment", async (req, res) => {
        WHERE pt.package_id = ?`,
       [package_id]
     );
-    // --- Calculate base total ---
-    let basePrice = packageData.price * travelers;
 
-    // --- Apply group discounts ---
-    const [[{ discount }]] = await db.query("SELECT calculate_discount(?) AS discount", [travelers]);
-    const discountedPrice = basePrice * (1 - discount);
+    // Base package cost for all travelers
+    //const baseTotal = packageData.price * travelers;
 
-    const [[{ totalPrice }]] = await db.query(
-    "SELECT calculate_total_price(?, ?, ?) AS totalPrice",
-    [packageData.price, travelers, discount]
+    // Apply group discount
+    const [[{ discount }]] = await db.query(
+      "SELECT calculate_discount(?) AS discount",
+      [travelers]
     );
 
-
+    // Store raw values for front-end calculation
     res.render("payment", {
       package: packageData,
       travelers,
       transports: transportRows,
-      totalPrice: discountedPrice.toFixed(2),
       discount: (discount * 100).toFixed(0),
       date: date,
       page: "payment",
@@ -279,7 +278,11 @@ app.get("/payment", async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send("Internal Server Error");
+    req.session.message = {
+      type: "error",
+      text: "Booking failed. Please try again",
+    };
+    res.redirect("/packages");
   }
 });
 
@@ -345,8 +348,10 @@ app.get("/profile", isAuthenticated, async (req, res) => {
       email: userResults[0].email,
     };
 
-    const [bookingResults] = await db.query("SELECT * FROM user_bookings_view WHERE user_id = ?", [userId]);
-
+    const [bookingResults] = await db.query(
+      "SELECT * FROM user_bookings_view WHERE user_id = ?",
+      [userId]
+    );
 
     const bookings = bookingResults.map((b) => ({
       booking_id: b.booking_id,
@@ -380,62 +385,107 @@ app.get("/profile", isAuthenticated, async (req, res) => {
   }
 });
 
-app.post("/process-payment", async (req, res) => {
+app.post("/process-payment", isAuthenticated, async (req, res) => {
   try {
-    if (!req.session.user) {
+    const userId = req.session.user.id; //|| request.session.user_id;
+
+    // Ensure user is logged in
+    if (!userId) {
       req.session.message = {
         type: "error",
-        text: "Please log in to complete payment.",
+        text: "Please login to continue.",
       };
-      return res.redirect("/login");
+      return (res.redirect("/login"));
     }
-    const userId = req.session.user.user_id || req.session.user.id;
 
-    const {
-      package_id,
-      travelers,
-      total,
-      method,
-      transport_id,
-      travel_start_date,
-    } = req.body;
+    const { package_id, travelers, method, transport_id, travel_start_date } =
+      req.body;
 
+    // Validate required fields
     if (
       !package_id ||
       !travelers ||
-      !total ||
-      !method ||
       !transport_id ||
+      !method ||
       !travel_start_date
     ) {
       req.session.message = {
         type: "error",
-        text: "Missing booking or payment details.",
+        text: "Please select all required details before proceeding.",
       };
-      return res.redirect("/");
+      return res.redirect(
+        `/payment?package_id=${package_id}&travelers=${travelers}&date=${travel_start_date}`
+      );
     }
 
-    const currentDate = new Date().toISOString().split("T")[0];
+    // Validate travelers
+    if (isNaN(travelers) || travelers < 1) {
+      req.session.message = {
+        type: "error",
+        text: "Invalid number of travelers.",
+      };
+      return res.redirect(`/packages`);
+    }
+
+    if (transport_id === "" || transport_id === "0") {
+      req.session.message = {
+        type: "error",
+        text: "Please select a transport option.",
+      };
+      return res.redirect("back");
+    }
+
+    if (method.trim() === "") {
+      req.session.message = {
+        type: "error",
+        text: "Please select a payment method.",
+      };
+      return res.redirect("back");
+    }
+
+    const [[{ price: basePrice }]] = await db.query(
+      "SELECT price FROM package WHERE package_id = ?",
+      [package_id]
+    );
+
+    const [[{ price: transportPrice }]] = await db.query(
+      "SELECT price FROM transport WHERE transport_id = ?",
+      [transport_id]
+    );
+
+    const [[{ discount }]] = await db.query(
+      "SELECT calculate_discount(?) AS discount",
+      [travelers]
+    );
+
+    const [[{ totalPrice }]] = await db.query(
+      "SELECT calculate_total_price(?, ?, ?, ?) AS totalPrice",
+      [basePrice, travelers, transportPrice, discount]
+    );
 
     await db.query("CALL create_booking_and_payment(?, ?, ?, ?, ?, ?, ?, ?)", [
-    userId, package_id, currentDate, travel_start_date, transport_id, travelers, total, method
+      userId,
+      package_id,
+      new Date().toISOString().split("T")[0],
+      travel_start_date,
+      transport_id,
+      travelers,
+      totalPrice,
+      method,
     ]);
-    
-    
-
 
     req.session.message = {
       type: "success",
       text: "Payment completed successfully!",
     };
-    res.redirect("/profile");
+    return res.redirect("/profile");
   } catch (err) {
     console.error(err);
     req.session.message = {
       type: "error",
       text: "Payment failed. Please try again.",
     };
-    return res.redirect("/packages"); // Sends user back to payment page safely
+    return res.redirect("/packages");
   }
 });
 

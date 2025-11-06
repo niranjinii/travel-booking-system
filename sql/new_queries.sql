@@ -63,16 +63,28 @@ SELECT
 FROM booking b
 JOIN package p ON b.package_id = p.package_id;
 
-DELIMITER //
-CREATE FUNCTION calculate_total_price(base_price DECIMAL(10,2), travelers INT, discount DECIMAL(5,2))
+DROP FUNCTION IF EXISTS calculate_total_price;
+DELIMITER $$
+
+CREATE FUNCTION calculate_total_price(
+    basePrice DECIMAL(10,2),
+    travelers INT,
+    transportPrice DECIMAL(10,2),
+    discount DECIMAL(5,4)
+)
 RETURNS DECIMAL(10,2)
 DETERMINISTIC
 BEGIN
-    DECLARE total DECIMAL(10,2);
-    SET total = (base_price * travelers) * (1 - discount);
-    RETURN total;
-END //
+    DECLARE baseTotal DECIMAL(10,2);
+
+    SET baseTotal = (basePrice * travelers) + (transportPrice * travelers);
+
+    RETURN baseTotal * (1 - discount);
+END$$
+
 DELIMITER ;
+
+
 
 DELIMITER //
 CREATE PROCEDURE cancel_booking(IN p_booking_id INT, IN p_user_id INT)
