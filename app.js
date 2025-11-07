@@ -6,7 +6,7 @@ const session = require("express-session");
 const flash = require("connect-flash");
 
 const db = require("./database.js");
-const { isAuthenticated } = require("./middleware.js");
+const { isAdmin, isAuthenticated } = require("./middleware.js");
 const { imageMap } = require("./app-image-addon.js");
 
 //const blogRoutes = require('./routes/blog');
@@ -213,9 +213,14 @@ app.post("/login", async (req, res) => {
       id: user.user_id,
       name: user.name,
       email: user.email,
+      role: user.role,
     };
 
-    res.redirect("/"); // redirect to dashboard or homepage
+    if (user.role === "admin") {
+      res.redirect("/admin/dashboard");
+    } else {
+      res.redirect("/");
+    }
   } catch (err) {
     console.error(err);
     req.session.message = { type: "error", text: "Something went wrong." };
@@ -643,6 +648,52 @@ app.post("/update-profile", isAuthenticated, async (req, res) => {
     };
 
     return res.redirect("/profile");
+  }
+});
+
+// Admin dashboard route
+app.get('/admin/dashboard', isAdmin, async (req, res) => {
+  try {
+    const [[{ userCount }]] = await db.query('SELECT COUNT(*) AS userCount FROM user');
+    const [[{ bookingCount }]] = await db.query('SELECT COUNT(*) AS bookingCount FROM booking');
+    const [[{ packageCount }]] = await db.query('SELECT COUNT(*) AS packageCount FROM package');
+    const [[{ totalRevenue }]] = await db.query('SELECT TotalRevenue() AS totalRevenue');
+
+    // Nested query: Avg booking value per package (Top 3)
+    const [avgPackages] = await db.query(`
+      SELECT p.package_name, 
+             (SELECT AVG(pay.amount)
+              FROM Payment pay
+              JOIN Booking b2 ON pay.booking_id = b2.booking_id
+              WHERE b2.package_id = p.package_id) AS avg_value
+      FROM Package p
+      ORDER BY avg_value DESC
+      LIMIT 3;
+    `);
+
+    // Procedure: Top 3 spending users
+    const [topUsers] = await db.query('CALL TopSpendingUsers()');
+
+    // Fetch payment history (audit trail)
+    const [paymentAudit] = await db.query(`
+      SELECT audit_id, payment_id, booking_id, amount, method, action_type, action_date
+      FROM payment_audit
+      ORDER BY action_date DESC
+      LIMIT 20; -- show recent 20 entries for clarity
+    `);
+
+
+    res.render('admin-dashboard', {
+      page: 'admin-dashboard',
+      user: req.session.user || null,
+      stats: { userCount, bookingCount, packageCount, totalRevenue },
+      avgPackages,
+      paymentAudit,
+      topUsers: topUsers[0],
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('500');
   }
 });
 

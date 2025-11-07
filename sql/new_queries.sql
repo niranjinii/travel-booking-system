@@ -171,12 +171,65 @@ AFTER INSERT ON payment
 FOR EACH ROW
 BEGIN
     INSERT INTO payment_audit (
-        payment_id, booking_id, amount, payment_date, method, action_type
+        payment_id, booking_id, amount, method, action_type
     )
     VALUES (
-        NEW.payment_id, NEW.booking_id, NEW.amount, NEW.payment_date, NEW.method, 'INSERT'
+        NEW.payment_id, NEW.booking_id, NEW.amount, NEW.method, 'INSERT'
     );
 END;
 //
 DELIMITER ;
 
+
+-- =========================
+-- ADMIN QUERIES AND FUNCTIONS
+-- =========================
+
+-- =========================================
+-- FUNCTION: Get total revenue of all bookings
+-- =========================================
+DELIMITER //
+CREATE FUNCTION TotalRevenue()
+RETURNS DECIMAL(12,2)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE total DECIMAL(12,2);
+    SELECT IFNULL(SUM(amount), 0) INTO total
+    FROM payment;
+    RETURN total;
+END //
+DELIMITER ;
+
+-- =========================================
+-- FUNCTION: Get total spent by a specific user
+-- =========================================
+DELIMITER //
+CREATE FUNCTION TotalSpentByUser(p_user_id INT)
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+  DECLARE total DECIMAL(10,2);
+  SELECT IFNULL(SUM(amount), 0) INTO total
+  FROM payment
+  INNER JOIN booking USING (booking_id)
+  WHERE booking.user_id = p_user_id;
+  RETURN total;
+END //
+DELIMITER ;
+
+-- =========================================
+-- PROCEDURE: Get top 10 users by spending
+-- =========================================
+DELIMITER //
+CREATE PROCEDURE TopSpendingUsers()
+BEGIN
+    SELECT 
+        u.user_id,
+        u.name,
+        TotalSpentByUser(u.user_id) AS total_spent
+    FROM user u
+    ORDER BY total_spent DESC
+    LIMIT 10;
+END //
+DELIMITER ;
