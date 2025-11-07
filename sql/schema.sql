@@ -107,3 +107,13 @@ CREATE TABLE Payment (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS payment_audit (
+    audit_id INT AUTO_INCREMENT PRIMARY KEY,
+    payment_id INT,
+    booking_id INT,
+    amount DECIMAL(10,2),
+    method VARCHAR(50),
+    action_type VARCHAR(20),
+    action_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

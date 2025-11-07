@@ -164,3 +164,19 @@ BEGIN
 END //
 
 DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER trg_payment_audit
+AFTER INSERT ON payment
+FOR EACH ROW
+BEGIN
+    INSERT INTO payment_audit (
+        payment_id, booking_id, amount, payment_date, method, action_type
+    )
+    VALUES (
+        NEW.payment_id, NEW.booking_id, NEW.amount, NEW.payment_date, NEW.method, 'INSERT'
+    );
+END;
+//
+DELIMITER ;
+
