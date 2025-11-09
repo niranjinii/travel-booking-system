@@ -46,26 +46,41 @@
         <!-- Filter & Search Bar -->
         <section class="package-filters container">
           <form class="filter-bar" action="/packages" method="get">
-          <input
-          type="text"
-          name="q"
-          value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
-          class="form-control search-input"
-          placeholder="Search destinations or descriptions..."
-          />
 
-          <select class="form-select filter-select" name="theme">
-          <option value="">All Themes</option>
-          <% for (const theme of themes) { %>
-            <option value="<%= theme.theme %>" 
-            <%= theme.theme === selectedTheme ? 'selected' : '' %>>
-            <%= theme.theme %>
-          </option>
-          <% } %>
-          </select>
+    <input
+    type="text"
+    name="q"
+    value="<%= searchQuery %>"
+    class="form-control search-input"
+    placeholder="Search destinations or descriptions..."
+  />
 
-        <button type="submit" class="btn filter-btn">Search</button>
-        </form>
+  <select class="form-select filter-select" name="theme">
+    <option value="">All Themes</option>
+    <% themes.forEach(t => { %>
+      <option value="<%= t.theme %>" <%= t.theme === selectedTheme ? "selected" : "" %>><%= t.theme %></option>
+    <% }) %>
+  </select>
+
+  <!-- Days Filter -->
+  <select class="form-select filter-select" name="days">
+    <option value="">Any Duration</option>
+    <option value="1-3" <%= selectedDays === "1-3" ? "selected" : "" %>>1 - 3 Days</option>
+    <option value="4-7" <%= selectedDays === "4-7" ? "selected" : "" %>>4 - 7 Days</option>
+    <option value="8+" <%= selectedDays === "8+" ? "selected" : "" %>>8+ Days</option>
+  </select>
+
+  <!-- Price Filter -->
+  <select class="form-select filter-select" name="price">
+    <option value="">Any Price</option>
+    <option value="<30000" <%= selectedPrice === "<30000" ? "selected" : "" %>>< ₹30,000</option>
+    <option value="30000-60000" <%= selectedPrice === "30000-60000" ? "selected" : "" %>>₹30,000 - ₹60,000</option>
+    <option value=">60000" <%= selectedPrice === ">60000" ? "selected" : "" %>>₹60,000+</option>
+  </select>
+
+  <button type="submit" class="btn filter-btn">Search</button>
+</form>
+
       </section>
 
 

@@ -63,7 +63,7 @@ app.get("/", async (req, res) => {
 
 app.get("/packages", async function (req, res) {
   try {
-    const { q, theme } = req.query;
+    const { q, theme, days, price } = req.query;
 
     let query = `SELECT DISTINCT p.* FROM package p
                  LEFT JOIN package_destination pd ON p.package_id = pd.package_id
@@ -71,19 +71,38 @@ app.get("/packages", async function (req, res) {
                  WHERE 1`;
     const params = [];
 
+    // Theme Filter
     if (theme && theme.trim() !== "") {
       query += ` AND p.theme = ?`;
       params.push(theme);
     }
+
+    // Search Filter
     if (q && q.trim() !== "") {
       const pattern = `%${q}%`;
       query += ` AND (p.package_name LIKE ? OR p.description LIKE ? OR d.name LIKE ?)`;
       params.push(pattern, pattern, pattern);
     }
 
+    // Days Filter
+    if (days) {
+      if (days === "1-3") query += ` AND p.duration_days BETWEEN 1 AND 3`;
+      else if (days === "4-7") query += ` AND p.duration_days BETWEEN 4 AND 7`;
+      else if (days === "8+") query += ` AND p.duration_days >= 8`;
+    }
+
+    // Price Filter
+    // Price Filter
+    if (price) {
+      if (price === "<30000") query += ` AND p.price < 30000`;
+      else if (price === "30000-60000")
+        query += ` AND p.price BETWEEN 30000 AND 60000`;
+      else if (price === ">60000") query += ` AND p.price > 60000`;
+    }
+
     const [packages] = await db.query(query, params);
 
-    // ✅ Attach images
+    // Attach Images
     packages.forEach((p) => {
       p.image =
         imageMap[p.package_id] ||
@@ -99,6 +118,8 @@ app.get("/packages", async function (req, res) {
       user: req.session.user || null,
       selectedTheme: theme || "",
       searchQuery: q || "",
+      selectedDays: days || "",
+      selectedPrice: price || "",
     });
   } catch (err) {
     console.error("Error fetching packages:", err);
@@ -652,12 +673,20 @@ app.post("/update-profile", isAuthenticated, async (req, res) => {
 });
 
 // Admin dashboard route
-app.get('/admin/dashboard', isAdmin, async (req, res) => {
+app.get("/admin/dashboard", isAdmin, async (req, res) => {
   try {
-    const [[{ userCount }]] = await db.query('SELECT COUNT(*) AS userCount FROM user');
-    const [[{ bookingCount }]] = await db.query('SELECT COUNT(*) AS bookingCount FROM booking');
-    const [[{ packageCount }]] = await db.query('SELECT COUNT(*) AS packageCount FROM package');
-    const [[{ totalRevenue }]] = await db.query('SELECT TotalRevenue() AS totalRevenue');
+    const [[{ userCount }]] = await db.query(
+      "SELECT COUNT(*) AS userCount FROM user"
+    );
+    const [[{ bookingCount }]] = await db.query(
+      "SELECT COUNT(*) AS bookingCount FROM booking"
+    );
+    const [[{ packageCount }]] = await db.query(
+      "SELECT COUNT(*) AS packageCount FROM package"
+    );
+    const [[{ totalRevenue }]] = await db.query(
+      "SELECT TotalRevenue() AS totalRevenue"
+    );
 
     // Nested query: Avg booking value per package (Top 3)
     const [avgPackages] = await db.query(`
@@ -668,11 +697,11 @@ app.get('/admin/dashboard', isAdmin, async (req, res) => {
               WHERE b2.package_id = p.package_id) AS avg_value
       FROM Package p
       ORDER BY avg_value DESC
-      LIMIT 3;
+      LIMIT 5;
     `);
 
     // Procedure: Top 3 spending users
-    const [topUsers] = await db.query('CALL TopSpendingUsers()');
+    const [topUsers] = await db.query("CALL TopSpendingUsers()");
 
     // Fetch payment history (audit trail)
     const [paymentAudit] = await db.query(`
@@ -681,20 +710,32 @@ app.get('/admin/dashboard', isAdmin, async (req, res) => {
       ORDER BY action_date DESC
       LIMIT 20; -- show recent 20 entries for clarity
     `);
+    const [monthlyStats] = await db.query(`
+  SELECT 
+    DATE_FORMAT(payment_date, '%b') AS month,
+    SUM(amount) AS total
+  FROM payment
+  GROUP BY DATE_FORMAT(payment_date, '%b'), MONTH(payment_date)
+  ORDER BY MONTH(payment_date);
+`);
 
-
-    res.render('admin-dashboard', {
-      page: 'admin-dashboard',
+    res.render("admin-dashboard", {
+      page: "admin-dashboard",
       user: req.session.user || null,
       stats: { userCount, bookingCount, packageCount, totalRevenue },
       avgPackages,
       paymentAudit,
       topUsers: topUsers[0],
+      monthlyStats,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).render('500');
+    res.status(500).render("500");
   }
+});
+
+app.get("/about", (req, res) => {
+  res.render("about", { page: "about", user: req.session.user || null });
 });
 
 // 404 Handler
