@@ -4,7 +4,8 @@
   min-height: 100vh;
   padding: 4rem 0;
   font-family: "Inter", sans-serif;
-} /* --- Profile Header --- */
+}
+/* --- Profile Header --- */
 .profile-header {
   display: flex;
   align-items: center;
@@ -242,4 +243,45 @@
   display: flex;
   gap: 0.5rem;
   margin-top: 0.5rem;
+}
+/* === OVERLAY MODAL === */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  visibility: hidden;
+  opacity: 0;
+  transition: 0.3s ease;
+  z-index: 2000;
+}
+
+.overlay.show {
+  visibility: visible;
+  opacity: 1;
+}
+
+.overlay-content {
+  background: rgba(255, 255, 255, 0.09);
+  padding: 35px;
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  width: 420px;
+  max-width: 90%;
+  text-align: center;
+}
+
+.update-profile-form input {
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+}
+
+.update-profile-form input:focus {
+  background: rgba(255, 255, 255, 0.28);
 }

@@ -643,6 +643,14 @@ app.post("/update-profile", isAuthenticated, async (req, res) => {
   const { name, email, phone } = req.body;
   const userId = req.session.user.id;
 
+   if (phone && !/^[0-9]{10}$/.test(phone)) {
+    req.session.message = {
+      type: "error",
+      text: "Phone number must be exactly 10 digits.",
+    };
+    return res.redirect("/profile");
+  }
+
   try {
     await db.query("CALL update_user_profile(?, ?, ?, ?)", [
       userId,
