@@ -181,13 +181,9 @@ END;
 DELIMITER ;
 
 
--- =========================
 -- ADMIN QUERIES AND FUNCTIONS
--- =========================
 
--- =========================================
 -- FUNCTION: Get total revenue of all bookings
--- =========================================
 DELIMITER //
 CREATE FUNCTION TotalRevenue()
 RETURNS DECIMAL(12,2)
@@ -201,9 +197,7 @@ BEGIN
 END //
 DELIMITER ;
 
--- =========================================
 -- FUNCTION: Get total spent by a specific user
--- =========================================
 DELIMITER //
 CREATE FUNCTION TotalSpentByUser(p_user_id INT)
 RETURNS DECIMAL(10,2)
@@ -218,9 +212,7 @@ BEGIN
 END //
 DELIMITER ;
 
--- =========================================
 -- PROCEDURE: Get top 10 users by spending
--- =========================================
 DELIMITER //
 CREATE PROCEDURE TopSpendingUsers()
 BEGIN

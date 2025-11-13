@@ -2,7 +2,7 @@
 :root {
   --font-sans: 'Montserrat', sans-serif;
   /* Assuming you have these defined elsewhere from style.css */
-  --dark-green: #27342b;
+  --dark-green: #191e1a;
   --light-text: #e0e0e0;
   --accent-color: #00b894;
 }

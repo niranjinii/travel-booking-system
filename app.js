@@ -92,7 +92,6 @@ app.get("/packages", async function (req, res) {
     }
 
     // Price Filter
-    // Price Filter
     if (price) {
       if (price === "<30000") query += ` AND p.price < 30000`;
       else if (price === "30000-60000")
