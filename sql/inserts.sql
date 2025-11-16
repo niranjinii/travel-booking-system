@@ -361,3 +361,6 @@ INSERT INTO package_transport (package_id, transport_id) VALUES
 (20, 17), (20, 9),               -- Turkey: Turkish/British
 (23, 5), (23, 6), (23, 12);      -- Bali + Maldives: Emirates, Singapore, Cruise
 
+ALTER TABLE user ADD COLUMN role ENUM('user','admin') NOT NULL DEFAULT 'user';
+
+ALTER TABLE booking DROP COLUMN status;

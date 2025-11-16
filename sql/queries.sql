@@ -1,220 +1,227 @@
--- =====================================================
--- ✅ SCHEMA-COMPATIBLE TRIGGERS, VIEWS & PROCEDURES
--- =====================================================
--- =========================================
--- Trigger: Automatically set payment amount
--- =========================================
+CREATE OR REPLACE VIEW top_3_packages AS
+SELECT 
+    p.package_id,
+    p.package_name,
+    COUNT(b.booking_id) AS bookings_count
+FROM package p
+LEFT JOIN booking b ON p.package_id = b.package_id
+GROUP BY p.package_id, p.package_name
+ORDER BY bookings_count DESC
+LIMIT 3;
+
 DELIMITER //
-CREATE TRIGGER auto_payment_amount
-BEFORE INSERT ON Payment
-FOR EACH ROW
+CREATE FUNCTION calculate_discount(travelers INT)
+RETURNS DECIMAL(5,2)
+DETERMINISTIC
 BEGIN
-    DECLARE pkg_price DECIMAL(10,2);
-    DECLARE ppl INT;
-
-    SELECT p.price, b.numtravelers
-    INTO pkg_price, ppl
-    FROM Booking b
-    JOIN Package p ON b.package_id = p.package_id
-    WHERE b.booking_id = NEW.booking_id;
-
-    SET NEW.amount = pkg_price * ppl;
+    DECLARE discount DECIMAL(5,2) DEFAULT 0.00;
+    IF travelers >= 4 THEN
+        SET discount = 0.15;
+    ELSEIF travelers = 3 THEN
+        SET discount = 0.10;
+    ELSEIF travelers = 2 THEN
+        SET discount = 0.05;
+    END IF;
+    RETURN discount;
 END //
 DELIMITER ;
 
-
--- =========================================
--- View: Booking Summary (All destinations per booking)
--- =========================================
-CREATE VIEW BookingSummary AS
-SELECT 
-    b.booking_id,
-    u.name AS customer,
-    GROUP_CONCAT(DISTINCT d.name ORDER BY pd.sequence_no SEPARATOR ', ') AS destinations,
-    p.package_name,
-    b.numtravelers,
-    pay.amount,
-    b.status
-FROM Booking b
-JOIN User u ON b.user_id = u.user_id
-JOIN Package p ON b.package_id = p.package_id
-JOIN Package_Destination pd ON p.package_id = pd.package_id
-JOIN Destination d ON pd.destination_id = d.destination_id
-LEFT JOIN Payment pay ON b.booking_id = pay.booking_id
-GROUP BY b.booking_id, u.name, p.package_name, b.numtravelers, pay.amount, b.status;
-
--- =========================================
--- Procedure: Make Booking
--- =========================================
 DELIMITER //
-CREATE PROCEDURE MakeBooking (
+CREATE PROCEDURE create_booking_and_payment (
     IN p_user_id INT,
     IN p_package_id INT,
+    IN p_booking_date DATE,
+    IN p_travel_start_date DATE,
     IN p_transport_id INT,
     IN p_numtravelers INT,
-    IN p_status VARCHAR(50),
-    IN p_travel_start_date DATE
+    IN p_amount DECIMAL(10,2),
+    IN p_method VARCHAR(50)
 )
 BEGIN
-    INSERT INTO Booking (user_id, package_id, transport_id, booking_date, travel_start_date, numtravelers, status)
-    VALUES (p_user_id, p_package_id, p_transport_id, CURDATE(), p_travel_start_date, p_numtravelers, p_status);
+    DECLARE new_booking_id INT;
+
+    INSERT INTO booking (user_id, package_id, booking_date, travel_start_date, transport_id, numtravelers)
+    VALUES (p_user_id, p_package_id, p_booking_date, p_travel_start_date, p_transport_id, p_numtravelers);
+
+    SET new_booking_id = LAST_INSERT_ID();
+
+    INSERT INTO payment (booking_id, amount, payment_date, method)
+    VALUES (new_booking_id, p_amount, p_booking_date, p_method);
 END //
 DELIMITER ;
 
--- =========================================
--- Procedure: Update Booking Status
--- =========================================
-DELIMITER //
-CREATE PROCEDURE UpdateBookingStatus (
-    IN p_booking_id INT,
-    IN p_status VARCHAR(50)
+CREATE OR REPLACE VIEW user_bookings_view AS
+SELECT 
+    b.booking_id,
+    b.user_id,
+    b.package_id,
+    b.booking_date,
+    b.travel_start_date,
+    b.numtravelers,
+    p.package_name,
+    p.price
+FROM booking b
+JOIN package p ON b.package_id = p.package_id;
+
+DROP FUNCTION IF EXISTS calculate_total_price;
+DELIMITER $$
+
+CREATE FUNCTION calculate_total_price(
+    basePrice DECIMAL(10,2),
+    travelers INT,
+    transportPrice DECIMAL(10,2),
+    discount DECIMAL(5,4)
 )
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
 BEGIN
-    UPDATE Booking
-    SET status = p_status
-    WHERE booking_id = p_booking_id;
+    DECLARE baseTotal DECIMAL(10,2);
+
+    SET baseTotal = (basePrice * travelers) + (transportPrice * travelers);
+
+    RETURN baseTotal * (1 - discount);
+END$$
+
+DELIMITER ;
+
+
+
+DELIMITER //
+CREATE PROCEDURE cancel_booking(IN p_booking_id INT, IN p_user_id INT)
+BEGIN
+    DECLARE count_booking INT;
+    SELECT COUNT(*) INTO count_booking
+    FROM booking
+    WHERE booking_id = p_booking_id AND user_id = p_user_id;
+
+    IF count_booking > 0 THEN
+        DELETE FROM booking WHERE booking_id = p_booking_id;
+    END IF;
 END //
 DELIMITER ;
 
--- =========================================
--- Function: Calculate Total Spent by User
--- =========================================
 DELIMITER //
-CREATE FUNCTION TotalSpentByUser(u_id INT)
+
+CREATE TRIGGER prevent_overlapping_bookings
+BEFORE INSERT ON booking
+FOR EACH ROW
+BEGIN
+    DECLARE pkg_duration INT;
+    DECLARE new_start DATE;
+    DECLARE new_end DATE;
+
+    -- Get the package duration_days from your schema
+    SELECT duration_days INTO pkg_duration
+    FROM package
+    WHERE package_id = NEW.package_id;
+
+    SET new_start = NEW.travel_start_date;
+    SET new_end = DATE_ADD(new_start, INTERVAL pkg_duration - 1 DAY);
+
+    -- Check for any overlapping bookings for the same user
+    IF EXISTS (
+        SELECT 1
+        FROM booking b
+        JOIN package p ON b.package_id = p.package_id
+        WHERE b.user_id = NEW.user_id
+          AND (
+              (NEW.travel_start_date BETWEEN b.travel_start_date AND DATE_ADD(b.travel_start_date, INTERVAL p.duration_days - 1 DAY))
+           OR (new_end BETWEEN b.travel_start_date AND DATE_ADD(b.travel_start_date, INTERVAL p.duration_days - 1 DAY))
+           OR (b.travel_start_date BETWEEN new_start AND new_end)
+          )
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'You already have a booking that overlaps these dates.';
+    END IF;
+END;
+//
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE PROCEDURE update_user_profile(
+    IN p_user_id INT,
+    IN p_name VARCHAR(255),
+    IN p_email VARCHAR(255),
+    IN p_phone VARCHAR(20)
+)
+BEGIN
+    -- Check if the new email belongs to another user
+    IF EXISTS (
+        SELECT 1 FROM user 
+        WHERE email = p_email AND user_id <> p_user_id
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Email is already in use by another account.';
+    ELSE
+        UPDATE user
+        SET name = p_name,
+            email = p_email,
+            phone = p_phone
+        WHERE user_id = p_user_id;
+    END IF;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER trg_payment_audit
+AFTER INSERT ON payment
+FOR EACH ROW
+BEGIN
+    INSERT INTO payment_audit (
+        payment_id, booking_id, amount, method, action_type
+    )
+    VALUES (
+        NEW.payment_id, NEW.booking_id, NEW.amount, NEW.method, 'INSERT'
+    );
+END;
+//
+DELIMITER ;
+
+
+-- ADMIN QUERIES AND FUNCTIONS
+
+-- FUNCTION: Get total revenue of all bookings
+DELIMITER //
+CREATE FUNCTION TotalRevenue()
 RETURNS DECIMAL(12,2)
 DETERMINISTIC
 READS SQL DATA
 BEGIN
     DECLARE total DECIMAL(12,2);
     SELECT IFNULL(SUM(amount), 0) INTO total
-    FROM Payment pay
-    JOIN Booking b ON pay.booking_id = b.booking_id
-    WHERE b.user_id = u_id;
+    FROM payment;
     RETURN total;
 END //
 DELIMITER ;
 
--- =========================================
--- Function: Average Package Price by Theme
--- =========================================
+-- FUNCTION: Get total spent by a specific user
 DELIMITER //
-CREATE FUNCTION AvgPriceByTheme(theme_name VARCHAR(50))
+CREATE FUNCTION TotalSpentByUser(p_user_id INT)
 RETURNS DECIMAL(10,2)
 DETERMINISTIC
-READS SQL DATA
 BEGIN
-    DECLARE avg_price DECIMAL(10,2);
-    SELECT IFNULL(AVG(price), 0) INTO avg_price
-    FROM Package
-    WHERE theme = theme_name;
-    RETURN avg_price;
+  DECLARE total DECIMAL(10,2);
+  SELECT IFNULL(SUM(amount), 0) INTO total
+  FROM payment
+  INNER JOIN booking USING (booking_id)
+  WHERE booking.user_id = p_user_id;
+  RETURN total;
 END //
 DELIMITER ;
 
--- =========================================
--- Procedure: Get Booking Details (with travel_end_date)
--- =========================================
+-- PROCEDURE: Get top 10 users by spending
 DELIMITER //
-CREATE PROCEDURE GetBookingWithEndDate()
+CREATE PROCEDURE TopSpendingUsers()
 BEGIN
     SELECT 
-        b.booking_id,
-        u.name AS user_name,
-        p.package_name,
-        GROUP_CONCAT(DISTINCT d.name ORDER BY pd.sequence_no SEPARATOR ', ') AS destinations,
-        b.travel_start_date,
-        b.travel_end_date,
-        b.status,
-        b.numtravelers,
-        t.mode AS transport_mode,
-        t.company AS transport_company
-    FROM Booking b
-    JOIN User u ON b.user_id = u.user_id
-    JOIN Package p ON b.package_id = p.package_id
-    JOIN Package_Destination pd ON p.package_id = pd.package_id
-    JOIN Destination d ON pd.destination_id = d.destination_id
-    JOIN Transport t ON b.transport_id = t.transport_id
-    GROUP BY b.booking_id, u.name, p.package_name, b.travel_start_date, 
-             b.travel_end_date, b.status, b.numtravelers, t.mode, t.company;
+        u.user_id,
+        u.name,
+        TotalSpentByUser(u.user_id) AS total_spent
+    FROM user u
+    ORDER BY total_spent DESC
+    LIMIT 10;
 END //
 DELIMITER ;
-
--- =========================================
--- Complex Queries
--- =========================================
-
--- 🏆 Best-Selling Packages (Top 5)
-SELECT 
-    p.package_name,
-    COUNT(*) AS total_bookings
-FROM Booking b
-JOIN Package p ON b.package_id = p.package_id
-GROUP BY p.package_id
-ORDER BY total_bookings DESC
-LIMIT 5;
-
--- 💰 Highest Revenue Packages (Top 5)
-SELECT 
-    p.package_name,
-    SUM(pay.amount) AS total_revenue
-FROM Payment pay
-JOIN Booking b ON pay.booking_id = b.booking_id
-JOIN Package p ON b.package_id = p.package_id
-GROUP BY p.package_id
-ORDER BY total_revenue DESC
-LIMIT 5;
-
--- =========================================
--- Sample Queries Using Procedures, Functions & Views
--- =========================================
-
---  CALL PROCEDURE: Make a new booking for user 3, package 2
-CALL MakeBooking(3, 2, 4, 2, 'Confirmed', '2025-11-15');
-
---CALL PROCEDURE: Update booking status to Cancelled
-CALL UpdateBookingStatus(1, 'Cancelled');
-
---  CALL PROCEDURE: Get all bookings with end dates
-CALL GetBookingWithEndDate();
-
---  USE FUNCTION: Get total spent by user 1
-SELECT TotalSpentByUser(1) AS total_spent;
-
---  USE FUNCTION: Get all users with their total spending
-SELECT 
-    u.user_id,
-    u.name,
-    u.email,
-    TotalSpentByUser(u.user_id) AS total_spent
-FROM User u
-ORDER BY total_spent DESC;
-
---  USE FUNCTION: Average price for Cultural packages
-SELECT AvgPriceByTheme('Cultural') AS avg_cultural_price;
-
--- USE FUNCTION: Compare average prices across all themes
-SELECT DISTINCT
-    theme,
-    AvgPriceByTheme(theme) AS avg_price
-FROM Package
-ORDER BY avg_price DESC;
-
---  USE VIEW: Get all booking summaries
-SELECT * FROM BookingSummary;
-
---  USE VIEW: Get confirmed bookings only
-SELECT * FROM BookingSummary WHERE status = 'Confirmed';
-
---  USE VIEW: Get high-value bookings (amount > 100000)
-SELECT * FROM BookingSummary WHERE amount > 100000 ORDER BY amount DESC;
-
---  USE VIEW: Count bookings per customer
-SELECT 
-    customer,
-    COUNT(*) AS total_bookings,
-    SUM(amount) AS total_spent
-FROM BookingSummary
-GROUP BY customer
-ORDER BY total_spent DESC;
-
-ALTER TABLE package ADD FULLTEXT(description, package_name, theme);

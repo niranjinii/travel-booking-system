@@ -117,7 +117,3 @@ CREATE TABLE IF NOT EXISTS payment_audit (
     action_type VARCHAR(20),
     action_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
----ALTER TABLE user ADD COLUMN role ENUM('user','admin') NOT NULL DEFAULT 'user';
-
----ALTER TABLE booking DROP COLUMN status;
