@@ -48,7 +48,7 @@ This project heavily utilizes advanced MySQL features:
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/niranjinii/travel-booking-system.git](https://github.com/niranjinii/travel-booking-system.git)
+    git clone https://github.com/niranjinii/travel-booking-system.git
     cd travel-booking-system
     ```
 
