@@ -67,7 +67,6 @@ This project heavily utilizes advanced MySQL features:
 
 4.  **Run the application:**
     ```bash
-    node app.js
+    npm start
     ```
-    (Or `nodemon app.js` if you have it installed).
     The server will start on `http://localhost:3000`.
