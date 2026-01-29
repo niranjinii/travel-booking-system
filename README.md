@@ -1,10 +1,10 @@
-# ✈️ Travel Booking System
+# Travel Booking System
 
 This is a full-stack web application for a travel booking and package management system. It provides a complete portal for users to browse, book, and manage travel packages, and a separate, powerful dashboard for administrators to manage the platform's data.
 
 The application is built with a **Node.js/Express** backend, a **MySQL** database, and **EJS** for server-side rendering.
 
-## ✨ Key Features
+## Key Features
 
 * **User Authentication:** Secure user registration and login with password hashing (bcrypt).
 * **Package Browsing:** View all travel packages with dynamic server-side filtering (by price, duration, theme) and search.
@@ -20,7 +20,7 @@ The application is built with a **Node.js/Express** backend, a **MySQL** databas
     * **Procedures:** Handle complex transactions like creating a booking + payment in one go (`create_booking_and_payment`).
     * **Functions:** Centralize business logic like calculating discounts (`calculate_discount`) and total revenue.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Backend:** Node.js, Express.js
 * **Database:** MySQL
@@ -37,7 +37,7 @@ This project heavily utilizes advanced MySQL features:
 * **Views:** `top_3_packages`, `user_bookings_view`
 * **Advanced Queries:** Nested/Correlated Subqueries, Joins (LEFT, INNER), and Aggregate Queries (COUNT, SUM, AVG, GROUP BY).
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
